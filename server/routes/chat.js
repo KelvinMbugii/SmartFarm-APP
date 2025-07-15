@@ -5,7 +5,7 @@ const auth = require('../middlewares/auth');
 const router = express.Router();
 
 // Get All chats
-router.get('/', auth, async( req, res ) => {
+router.get('/', auth.protect, async( req, res ) => {
     try{
         const chats = await Chat.find({
             participants: req.user.userId
@@ -20,7 +20,7 @@ router.get('/', auth, async( req, res ) => {
 });
 
 // Get specific chats
-router.get('/:chatId', auth, async(req, res) => {
+router.get('/:chatId', auth.protect, async(req, res) => {
     try{
         const chat = await Chat.findOne({
             _id: req.params.chatId,
@@ -40,7 +40,7 @@ router.get('/:chatId', auth, async(req, res) => {
 });
 
 // Create new Chat
-router.post('/', auth, async (req, res) =>{
+router.post('/', auth.protect, async (req, res) =>{
     try{
         const { participantsId, message} = req.body;
 
@@ -75,7 +75,7 @@ router.post('/', auth, async (req, res) =>{
 });
 
 // sending messages
-router.post('/:chatId/message', auth, async (req, res) => {
+router.post('/:chatId/message', auth.protect, async (req, res) => {
     try {
         const { content, type = 'text' } = req.body;
 

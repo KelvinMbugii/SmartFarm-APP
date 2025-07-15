@@ -1,74 +1,108 @@
 const express = require('express');
-const MarketPrice = require('../models/MarketPrice');
+const Chat = require('../models/Chat');
+const auth = require('../middlewares/auth');
 
 const router = express.Router();
 
-// Get the market prices
-router.get('prices', async (req, res) => {
+// Get All chats
+router.get('/', auth.protect, async( req, res ) => {
     try{
-        const { commodity, market, days = 30 } = req.query;
+        const chats = await Chat.find({
+            participants: req.user.userId
+        })
+        .populate('participants', 'name email role avatar isOnline')
+        .sort({ lastMessage: -1});
 
-        const query = {};
-        if (commodity) query.commodity = commodity;
-        if (market) query.market = market;
-
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        query.date = { $gte: startDate };
-
-        const prices = await MarketPrice.find(query).sort({ date: -1}).limit(100);
-
-        res.json(prices);
-    } catch (error){
-    res.status(500).json({ error: error.message});
-    }
-});
-
-// Get price trends
-router.get('/trends', async(req, res) => {
-    try{
-        const { commodity } = req.query;
-
-        const pipeline = [
-            {
-                $match: commodity ? { commodity } : {}
-            },
-            { $group:{
-                _id: {
-                    commodity: '$commodity',
-                    date:{
-                        $dateToString: {
-                            format: '%y-%m-%d',
-                            date: '$date'
-                        }
-                    }
-                },
-
-                avgPrice: { $avg: '$price'},
-                count: { $sum: 1}
-              }
-            },
-            {
-                $sort: {'_id.date': -1}
-            },
-            {
-                $limit: 30
-            }
-        ];
-        const trends = await MarketPrice.aggregate(pipeline);
-        res.json(trends);
-    } catch (error){
+        res.json(chats);
+    }catch (error){
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get commodities list
-router.get('/commodities', async (req, res) => {
-    try {
-        const commodities = await MarketPrice.distinct('commodity');
-        res.json(commodities)
+// Get specific chats
+router.get('/:chatId', auth.protect, async(req, res) => {
+    try{
+        const chat = await Chat.findOne({
+            _id: req.params.chatId,
+            participants: req.user.userId
+        })
+        .populate('participant', 'name email role avatar isOnline')
+        .populate('message.sender', 'name avatar');
+
+        if (!chat){
+            return res.status(404).json({ error: 'Chat not found'});
+        }
+
+        res.json(chat)
     }catch (error){
-        res.status(500).json({ error: error.message});
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Create new Chat
+router.post('/', auth.protect, async (req, res) =>{
+    try{
+        const { participantsId, message} = req.body;
+
+        let chat = await Chat.findOne({
+            participants: { $all: [req.user.userId, participantsId]},
+            chatType: 'private'
+        });
+
+        if (!chat){
+            chat = new Chat({
+                participants: [ req.user.userId, participantsId],
+                chatType: 'private'
+            });
+        }
+
+        if (message){
+            chat.messages.push({
+                sender: req.user.userId,
+                content: message,
+                type: 'text'
+            });
+            chat.lastMessage = new Date();
+        }
+
+        await chat.save();
+        await chat.populate('participants', 'name email role avatar isOnline');
+
+        res.status(201).json(chat);
+    }catch (error){
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// sending messages
+router.post('/:chatId/message', auth.protect, async (req, res) => {
+    try {
+        const { content, type = 'text' } = req.body;
+
+        const chat = await Chat.findOne({
+            _id: req.params.chatId,
+            participants: req.user.userId
+        });
+
+        if (!chat) {
+            return res.status(404).json({ error: 'Chat not found'});
+        }
+
+        const message = {
+            sender: req.user.userId,
+            content,
+            type
+        };
+
+        chat.messages.push(message);
+        chat.lastMessage = new Date();
+        await chat.save();
+
+        await chat.populate('messages.sender', 'name avatar');
+
+        res.status(201).json(chat.messages[chat.messages.length -1]);
+    } catch (error){
+        res.status(500).json({ error: error.message });
     }
 });
 

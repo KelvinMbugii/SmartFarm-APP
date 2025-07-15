@@ -1,11 +1,12 @@
 const express = require('express');
 const Product =  require('../models/product');
 const auth = require('../middlewares/auth');
+//const mongoose = require('mongoose');
 
 const router = express.Router();
 
 // Get all products
-Router.get('/', async( req, res) => {
+router.get('/', async( req, res) => {
     try {
         const { category, condition, minPrice, maxPrice, search, page = 1,
             limit = 12
@@ -66,7 +67,7 @@ router.get('/:id', async (req, res) => {
 
 // Create product listing
 
-router.post('/', auth, async (req, res) => {
+router.post('/', auth.protect, auth.authorizeRoles,  async (req, res) => {
     try{
         const productData = {
             ...req.body,
@@ -86,7 +87,7 @@ router.post('/', auth, async (req, res) => {
 
 // Updating the product
 
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', auth.protect, auth.authorizeRoles, async (req, res) => {
     try{
         const product = await Product.findOne({
             _id: req.params.id,
@@ -107,7 +108,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete product
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', auth.protect, auth.authorizeRoles, async (req, res) => {
     try{
         const product = await Product.findOneAndDelete({
             _id: req.params.id,

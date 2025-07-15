@@ -5,7 +5,7 @@ const auth = require('../middlewares/auth');
 const router = express.Router();
 
 // Get all users
-router.get('/', auth, async ( req, res) => {
+router.get('/', auth.protect, async ( req, res) => {
     try {
         const { role, search } = req.query;
 
@@ -30,7 +30,7 @@ router.get('/', auth, async ( req, res) => {
 });
 
 // Get user Profile
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth.protect, async (req, res) => {
     try{
         const user = await User.findById(req.params.id).select('-password');
 
@@ -45,7 +45,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Update user profile
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth.protect, auth.authorizeRoles('farmer', 'officer'), async (req, res) => {
     try {
         const updates = req.body;
         delete updates.password;

@@ -100,7 +100,7 @@ router.post('/login', async(req, res) => {
 });
 
 // Get current user
-router.get('/me', auth, async(req,res) => {
+router.get('/me', auth.protect, async(req,res) => {
     try{
         const user = await User.findById(req.user.userId).select('-password');
         res.json(user);
@@ -110,7 +110,7 @@ router.get('/me', auth, async(req,res) => {
 });
 
 // Logout
-router.post('/logout', auth, async (req, res) => {
+router.post('/logout', auth.protect, async (req, res) => {
     try{
         const user = await User.findById(req.user.userId);
         user.isOnline = false;
