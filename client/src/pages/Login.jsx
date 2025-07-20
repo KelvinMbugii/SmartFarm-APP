@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/co
 import { Tractor } from "lucide-react";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user } = useAuth();
+  const { login, user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -22,7 +23,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
       await login(formData.email, formData.password);
     } catch (error) {
@@ -51,8 +51,11 @@ const Login = () => {
           <CardTitle className="text-2xl font-bold">
             Welcome to SmartFarm
           </CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
+          <CardDescription>
+            Sign in to your account to continue
+          </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
@@ -67,6 +70,7 @@ const Login = () => {
                 required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -79,10 +83,12 @@ const Login = () => {
                 required
               />
             </div>
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
+
           <div className="mt-6 text-center text-sm">
             <span className="text-muted-foreground">
               Don't have an account?{" "}

@@ -1,45 +1,43 @@
-const { useState } = require("react")
-const { useEffect } = require("react")
-const { useContext } = require("react")
-const { createContext } = require("react")
+import React, { createContext, useContext, useEffect, useState } from "react";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+const ThemeContext = createContext(undefined);
 
-const ThemeContext = createContext();
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
 
-export const useTheme = () =>{
-    const context = useContext(ThemeContext);
-    if(!context){
-        throw new Error('useTheme must be used within a ThemeProvider');
-    }
-    return context;
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 };
 
 export const ThemeProvider = ({ children }) => {
-    const [ theme, setTheme ] = useState(() => {
-        const savedTheme = localStorage.getItem('agriculture-theme');
-        return savedTheme || 'light';
-    });
+  const [theme, setTheme] = useState(() => {
+    
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("agriculture-theme");
+      return savedTheme || "light";
+    }
+    return "light";
+  });
 
-    useEffect(() => {
-        localStorage.setItem('agriculture-theme', theme);
-        document.documentElement.setAttribute('data-theme', theme);
-    },[theme]);
+  useEffect(() => {
+    localStorage.setItem("agriculture-theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
-    const toggleTheme = () => {
-        setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-    };
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
-    const value = {
-        theme,
-        toggleTheme,
-        isLight: theme === 'light',
-        isDark: theme === 'dark'
-    };
+  const value = {
+    theme,
+    toggleTheme,
+    isLight: theme === "light",
+    isDark: theme === "dark",
+  };
 
-    return (
-        <ThemeContext.Provider value={value}>
-            {children}
-        </ThemeContext.Provider>
-    )
-}
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+};

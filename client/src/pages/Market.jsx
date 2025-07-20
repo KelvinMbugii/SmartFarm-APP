@@ -3,25 +3,31 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, } from "recharts";
-import { TrendingUp, TrendingDown, Minus, Search, Bell } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,} from "recharts";
+import { Search, TrendingUp, TrendingDown, Bell, Minus } from "lucide-react";
 
 const Market = () => {
   const [prices, setPrices] = useState([]);
-  const [trends, setTrends] = useState([]);
   const [commodities, setCommodities] = useState([]);
-  const [selectedCommodity, setSelectedCommodity] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCommodity, setSelectedCommodity] = useState("");
 
   useEffect(() => {
     fetchMarketPrices();
     fetchCommodities();
-    fetchPriceTrends();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCommodity) {
+      fetchPriceTrends();
+    }
   }, [selectedCommodity]);
 
   const fetchMarketPrices = async () => {
+    setLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedCommodity) params.append("commodity", selectedCommodity);
@@ -101,6 +107,7 @@ const Market = () => {
   };
 
   const fetchPriceTrends = async () => {
+    setLoading(true);
     try {
       const params = new URLSearchParams();
       if (selectedCommodity) params.append("commodity", selectedCommodity);
@@ -128,6 +135,8 @@ const Market = () => {
         commodity: selectedCommodity || "Rice",
       })).reverse();
       setTrends(mockTrends);
+    } finally {
+      setLoading(false);
     }
   };
 

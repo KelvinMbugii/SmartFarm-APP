@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "sonner";
 
-const AuthContext = createContext(undefined);
+// Read API base URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -21,28 +24,40 @@ export const AuthProvider = ({ children }) => {
       fetchUser();
     } else {
       setLoading(false);
+      setUser(null);
     }
+    
   }, [token]);
+
+  // Helper function to safely parse JSON or return null
+  const safeJsonParse = async (response) => {
+    try {
+      return await response.json();
+    } catch {
+      return null;
+    }
+  };
 
   const fetchUser = async () => {
     try {
-      const response = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData);
+      const data = await safeJsonParse(response);
+
+      if (response.ok && data) {
+        setUser(data);
       } else {
         localStorage.removeItem("token");
         setToken(null);
+        setUser(null);
       }
     } catch (error) {
       console.error("Error fetching user:", error);
       localStorage.removeItem("token");
       setToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -50,23 +65,22 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
-      if (response.ok) {
+      if (response.ok && data) {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem("token", data.token);
         toast.success("Welcome back!");
       } else {
-        throw new Error(data.error || "Login failed");
+        const errorMsg = data?.error || "Login failed";
+        throw new Error(errorMsg);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed");
@@ -76,28 +90,25 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
+      const data = await safeJsonParse(response);
 
-      if (response.ok) {
+      if (response.ok && data) {
         setToken(data.token);
         setUser(data.user);
         localStorage.setItem("token", data.token);
         toast.success("Account created successfully!");
       } else {
-        throw new Error(data.error || "Registration failed");
+        const errorMsg = data?.error || "Registration failed";
+        throw new Error(errorMsg);
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Registration failed"
-      );
+      toast.error(error instanceof Error ? error.message : "Registration failed");
       throw error;
     }
   };
@@ -105,11 +116,9 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       if (token) {
-        await fetch("/api/auth/logout", {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
       }
     } catch (error) {
@@ -122,14 +131,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const value = {
-    user,
-    token,
-    login,
-    register,
-    logout,
-    loading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ user, token, login, register, logout, loading }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

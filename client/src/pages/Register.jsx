@@ -4,10 +4,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tractor } from "lucide-react";
+import { toast } from "sonner";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -22,71 +23,110 @@ const Register = () => {
     equipment: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register, user } = useAuth();
+  const { register, user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Validates required fields based on role
+  const isFormValid = () => {
+    const basicFieldsFilled =
+      formData.name &&
+      formData.email &&
+      formData.password &&
+      formData.role &&
+      formData.location &&
+      formData.phone;
+
+    if (formData.role === "farmer") {
+      // For farmers, farm-related fields must also be set and crops/equipment non-empty arrays
+      const cropsArr = formData.crops.split(",").map((c) => c.trim()).filter(Boolean);
+      const equipmentArr = formData.equipment.split(",").map((e) => e.trim()).filter(Boolean);
+      return (
+        basicFieldsFilled &&
+        formData.farmSize &&
+        cropsArr.length > 0 &&
+        equipmentArr.length > 0
+      );
+    }
+
+    return basicFieldsFilled;
+  };
+
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleSelectChange = (value) =>
+    setFormData((prev) => ({ ...prev, role: value }));
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid()) {
+      toast.error("Please fill in all required fields correctly.");
+      return;
+    }
     setIsLoading(true);
 
     try {
+      const farmDetails =
+        formData.role === "farmer"
+          ? {
+              farmSize: formData.farmSize,
+              crops: formData.crops
+                .split(",")
+                .map((c) => c.trim())
+                .filter(Boolean),
+              equipment: formData.equipment
+                .split(",")
+                .map((e) => e.trim())
+                .filter(Boolean),
+            }
+          : undefined;
+
       const userData = {
-        name: formData.name,
-        email: formData.email,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
         password: formData.password,
         role: formData.role,
-        location: formData.location,
-        phone: formData.phone,
-        farmDetails:
-          formData.role === "farmer"
-            ? {
-                farmSize: formData.farmSize,
-                crops: formData.crops.split(",").map((crop) => crop.trim()),
-                equipment: formData.equipment.split(",").map((eq) => eq.trim()),
-              }
-            : undefined,
+        location: formData.location.trim(),
+        phone: formData.phone.trim(),
+        farmDetails,
       };
 
       await register(userData);
+      
     } catch (error) {
       console.error("Registration error:", error);
+      toast.error(error?.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
-  };
-
-  const handleSelectChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      role: value,
-    }));
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="bg-primary rounded-full p-3">
               <Tractor className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Join SmartFarm</CardTitle>
-          <CardDescription>Create your account to get started</CardDescription>
+          <CardTitle className="text-3xl font-extrabold mb-1">Join SmartFarm</CardTitle>
+          <CardDescription className="text-gray-600 dark:text-gray-400">
+            Create your account to get started
+          </CardDescription>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name */}
+            <div className="space-y-1">
               <Label htmlFor="name">Full Name</Label>
               <Input
                 id="name"
@@ -96,10 +136,12 @@ const Register = () => {
                 value={formData.name}
                 onChange={handleChange}
                 required
+                autoComplete="name"
               />
             </div>
 
-            <div className="space-y-2">
+            {/* Email */}
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -109,10 +151,12 @@ const Register = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
+                autoComplete="email"
               />
             </div>
 
-            <div className="space-y-2">
+            {/* Password */}
+            <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -122,12 +166,14 @@ const Register = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
               />
             </div>
 
-            <div className="space-y-2">
+            {/* Role */}
+            <div className="space-y-1">
               <Label htmlFor="role">Role</Label>
-              <Select onValueChange={handleSelectChange}>
+              <Select value={formData.role} onValueChange={handleSelectChange} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>
@@ -138,7 +184,8 @@ const Register = () => {
               </Select>
             </div>
 
-            <div className="space-y-2">
+            {/* Location */}
+            <div className="space-y-1">
               <Label htmlFor="location">Location</Label>
               <Input
                 id="location"
@@ -148,10 +195,12 @@ const Register = () => {
                 value={formData.location}
                 onChange={handleChange}
                 required
+                autoComplete="address-level1"
               />
             </div>
 
-            <div className="space-y-2">
+            {/* Phone */}
+            <div className="space-y-1">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
@@ -161,12 +210,16 @@ const Register = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
+                pattern="^\+?[0-9\s\-()]{7,}$"
+                title="Please enter a valid phone number"
+                autoComplete="tel"
               />
             </div>
 
+            {/* Farmer specific fields */}
             {formData.role === "farmer" && (
               <>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="farmSize">Farm Size</Label>
                   <Input
                     id="farmSize"
@@ -175,10 +228,11 @@ const Register = () => {
                     placeholder="e.g., 10 acres"
                     value={formData.farmSize}
                     onChange={handleChange}
+                    required={formData.role === "farmer"}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="crops">Crops (comma-separated)</Label>
                   <Textarea
                     id="crops"
@@ -187,10 +241,11 @@ const Register = () => {
                     value={formData.crops}
                     onChange={handleChange}
                     rows={3}
+                    required={formData.role === "farmer"}
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="equipment">Equipment (comma-separated)</Label>
                   <Textarea
                     id="equipment"
@@ -199,6 +254,7 @@ const Register = () => {
                     value={formData.equipment}
                     onChange={handleChange}
                     rows={3}
+                    required={formData.role === "farmer"}
                   />
                 </div>
               </>
@@ -207,20 +263,15 @@ const Register = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isLoading || !formData.role}
+              disabled={isLoading || !isFormValid()}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">
-              Already have an account?{" "}
-            </span>
-            <Link
-              to="/login"
-              className="text-primary hover:underline font-medium"
-            >
+          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            Already have an account?{" "}
+            <Link to="/lfogin" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
           </div>

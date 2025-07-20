@@ -1,6 +1,10 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import io, { Socket } from 'socket.io-client';
-import { useAuth } from './AuthContext';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import io from "socket.io-client";
+import { useAuth } from "./AuthContext";
+
+// Always use VITE_ prefix environment variable in Vite projects!
+const SERVER_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const SocketContext = createContext(undefined);
 
@@ -15,27 +19,25 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+
   const { user, token } = useAuth();
 
   useEffect(() => {
+    let newSocket = null;
     if (user && token) {
-      const newSocket = io(
-        process.env.REACT_APP_SERVER_URL || "http://localhost:5000",
-        {
-          auth: {
-            token,
-          },
-        }
-      );
+      newSocket = io(SERVER_URL, {
+        auth: { token },
+        
+      });
 
       newSocket.on("connect", () => {
         setIsConnected(true);
-        newSocket.emit("join-user", user.id);
+        if (user && user.id) {
+          newSocket.emit("join-user", user.id);
+        }
       });
 
-      newSocket.on("disconnect", () => {
-        setIsConnected(false);
-      });
+      newSocket.on("disconnect", () => setIsConnected(false));
 
       setSocket(newSocket);
 
@@ -43,20 +45,19 @@ export const SocketProvider = ({ children }) => {
         newSocket.close();
       };
     } else {
+      // Cleanup on logout
+      setIsConnected(false);
       if (socket) {
         socket.close();
         setSocket(null);
       }
-      setIsConnected(false);
     }
+    
   }, [user, token]);
 
-  const value = {
-    socket,
-    isConnected,
-  };
-
   return (
-    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
+    <SocketContext.Provider value={{ socket, isConnected }}>
+      {children}
+    </SocketContext.Provider>
   );
 };
