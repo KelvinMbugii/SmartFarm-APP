@@ -25,7 +25,7 @@ router.post('/register', async(req,res) => {
         role,
         location,
         phone,
-        farmDetails: role === 'farmer' ? farmDetails : uderfined
+        farmDetails: role === 'farmer' ? farmDetails : undefined
     });
 
     await user.save();
@@ -54,56 +54,56 @@ router.post('/register', async(req,res) => {
 }
 });
 
+
 // Login route
-router.post('/login', async(req, res) => {
-    try{
-        const { email, password } = req.body;
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-        // Find user
-        const user = await User.findOne({ email });
-        if(!user){
-            return res.status(400).json({error: 'Invalid credentials'});
-        }
-
-        // Check password
-        const isMatch = await user.comparePassword(password);
-        if(!isMatch) {
-            return res.status(400).json({error: 'Invalid credentials'});
-        }
-
-        // Updating online status
-        user.isOnline = true;
-        await user.save();
-
-        // Generate token
-        const token = jwt.sign(
-            { userId: user._id, role: user.role},
-            process.env.JWT_SECRET,
-            {expiresIn: '7d'}
-        );
-
-        res.json({
-            token,
-            user: {
-                id: user._id,
-                name: user.name,
-                role: user.role,
-                location: user.location,
-                phone: user.phone,
-                farmDetails: user.farmDetails,
-                avatar: user.avatar
-            }
-        });
-    } catch (error){
-        res.status(500).json({ error: error.message });
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid credentials' });
     }
+
+    // Check password
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Updating online status
+    user.isOnline = true;
+    await user.save();
+
+    // Generate token
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        location: user.location,
+        phone: user.phone,
+        farmDetails: user.farmDetails,
+        avatar: user.avatar
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get current user
 router.get('/me', auth.protect, async(req,res) => {
     try{
-        const user = await User.findById(req.user.userId).select('-password');
-        res.json(user);
+        res.json(req.user);
     } catch (error){
         res.status(500).json({ error: error.message });
     }
@@ -122,5 +122,6 @@ router.post('/logout', auth.protect, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 module.exports = router;

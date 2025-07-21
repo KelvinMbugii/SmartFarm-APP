@@ -14,22 +14,25 @@ const protect = async (req, res, next) => {
     }
 
     if (!token) {
+      console.log("Authorization header missing or malformed");
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded JWT payload:", decoded);
 
-    // Get user from token and attach to request
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Not authorized, user not found" });
+    // Check that decoded token contains userId (adjust if payload differs)
+    if (!decoded.userId) {
+      console.log("Token payload missing userId");
+      return res.status(401).json({ message: "Invalid token payload" });
     }
 
-    if (!user.isActive) {
-      return res.status(401).json({ message: "Account is deactivated" });
+    // Get user from token and attach to request
+    const user = await User.findById(decoded.userId).select("-password");
+    if (!user) {
+      console.log("User not found with id:", decoded.userId);
+      return res.status(401).json({ message: "Not authorized, user not found" });
     }
 
     req.user = user;
@@ -53,8 +56,8 @@ const authorizeRoles = (...roles) => {
 };
 
 // Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };

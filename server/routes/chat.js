@@ -26,8 +26,8 @@ router.get('/:chatId', auth.protect, async(req, res) => {
             _id: req.params.chatId,
             participants: req.user.userId
         })
-        .populate('participant', 'name email role avatar isOnline')
-        .populate('message.sender', 'name avatar');
+        .populate('participants', 'name email role avatar isOnline')
+        .populate('messages.sender', 'name avatar');
 
         if (!chat){
             return res.status(404).json({ error: 'Chat not found'});
@@ -42,7 +42,7 @@ router.get('/:chatId', auth.protect, async(req, res) => {
 // Create new Chat
 router.post('/', auth.protect, async (req, res) =>{
     try{
-        const { participantsId, message} = req.body;
+        const { participantId, message} = req.body;
 
         let chat = await Chat.findOne({
             participants: { $all: [req.user.userId, participantsId]},
@@ -94,7 +94,7 @@ router.post('/:chatId/message', auth.protect, async (req, res) => {
             type
         };
 
-        chat.message.push(message);
+        chat.messages.push(message);
         chat.lastMessage = new Date();
         await chat.save();
 

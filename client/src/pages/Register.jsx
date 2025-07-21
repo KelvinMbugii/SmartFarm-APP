@@ -23,11 +23,11 @@ const Register = () => {
     equipment: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register, user, loading } = useAuth();
+  const { registerUser, user} = useAuth();
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  // if (loading) {
+  //   return <div>Loading...</div>;
+  // }
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
@@ -66,10 +66,13 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!isFormValid()) {
+      console.log("Invalid form submission:", formData);
       toast.error("Please fill in all required fields correctly.");
       return;
     }
+
     setIsLoading(true);
 
     try {
@@ -98,8 +101,8 @@ const Register = () => {
         farmDetails,
       };
 
-      await register(userData);
       
+      await registerUser(userData);
     } catch (error) {
       console.error("Registration error:", error);
       toast.error(error?.message || "Registration failed");
@@ -271,7 +274,7 @@ const Register = () => {
 
           <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
-            <Link to="/lfogin" className="text-primary hover:underline font-medium">
+            <Link to="/login" className="text-primary hover:underline font-medium">
               Sign in
             </Link>
           </div>

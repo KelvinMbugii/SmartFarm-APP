@@ -11,12 +11,12 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        lowerCase: true
+        lowercase: true
     },
     password: {
         type: String,
         required: true,
-        minlengtg: 6
+        minlength: 6
     },
     role: {
         type: String,
@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
 });
        
 // Hash the password
-userSchema.pre('save', async(next) =>{
+userSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next();
 
     try{
@@ -64,7 +64,7 @@ userSchema.pre('save', async(next) =>{
 });
 
 // Compare the passwords
-userSchema.method.comparePassword = async (candidatePassword) => {
+userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 

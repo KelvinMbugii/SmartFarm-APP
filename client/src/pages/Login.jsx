@@ -4,12 +4,19 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tractor } from "lucide-react";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null); // << Error state here
   const { login, user, loading } = useAuth();
 
   if (loading) {
@@ -23,10 +30,23 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null); // Clear previous errors
+
     try {
       await login(formData.email, formData.password);
     } catch (error) {
-      console.error("Login error:", error);
+      // Check if response status is 403 for deactivated account
+      if (error.response && error.response.status === 403) {
+        setErrorMessage(
+          error.response.data.error || "Your account has been deactivated."
+        );
+      } else {
+        setErrorMessage(
+          error.response?.data?.error ||
+            error.message ||
+            "Failed to login. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -51,9 +71,7 @@ const Login = () => {
           <CardTitle className="text-2xl font-bold">
             Welcome to SmartFarm
           </CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -83,6 +101,11 @@ const Login = () => {
                 required
               />
             </div>
+
+            {/* Display error message here */}
+            {errorMessage && (
+              <p className="text-red-600 text-sm font-medium">{errorMessage}</p>
+            )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}

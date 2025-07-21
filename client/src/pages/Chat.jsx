@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Search, Plus } from "lucide-react";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const Chat = () => {
   const { user } = useAuth();
@@ -38,35 +41,36 @@ const Chat = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/users", {
+      const response = await axios.get(`${API_BASE_URL}/api/users`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
+      setUsers(response.data);
     } catch (error) {
-      console.error("Error fetching users:", error);
+      if (error.response) {
+        // Server responded with a status other than 2xx
+        console.error("Fetch users failed:", error.response.data);
+      } else {
+        console.error("Error fetching users:", error.message);
+      }
     }
   };
 
   const fetchChats = async () => {
     try {
-      const response = await fetch("/api/chat", {
+      const response = await axios.get(`${API_BASE_URL}/api/chat`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setChats(data);
-      }
+      setChats(response.data);
     } catch (error) {
-      console.error("Error fetching chats:", error);
+      if (error.response) {
+        console.error("Fetch chats failed:", error.response.data);
+      } else {
+        console.error("Error fetching chats:", error.message);
+      }
     }
   };
 
@@ -75,14 +79,13 @@ const Chat = () => {
   };
 
   const handleMessageNotification = (data) => {
-    // Update chat list with new message
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === data.chatId
           ? {
               ...chat,
               lastMessage: data.message.content,
-              unreadCount: chat.unreadCount + 1,
+              unreadCount: (chat.unreadCount || 0) + 1,
             }
           : chat
       )
@@ -91,22 +94,24 @@ const Chat = () => {
 
   const startChat = async (userId) => {
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ participantId: userId }),
-      });
-
-      if (response.ok) {
-        const newChat = await response.json();
-        setChats((prev) => [newChat, ...prev]);
-        setActiveChat(newChat);
-      }
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat`,
+        { participantId: userId },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setChats((prev) => [response.data, ...prev]);
+      setActiveChat(response.data);
     } catch (error) {
-      console.error("Error starting chat:", error);
+      if (error.response) {
+        console.error("Error starting chat:", error.response.data);
+      } else {
+        console.error("Error starting chat:", error.message);
+      }
     }
   };
 
@@ -120,32 +125,32 @@ const Chat = () => {
     };
 
     try {
-      const response = await fetch(`/api/chat/${activeChat.id}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(messageData),
-      });
-
-      if (response.ok) {
-        const message = await response.json();
-        setMessages((prev) => [...prev, message]);
-        setNewMessage("");
-
-        // Emit to socket
-        if (socket) {
-          socket.emit("send-message", {
-            chatId: activeChat.id,
-            message,
-            recipientId: activeChat.participants.find((p) => p.id !== user?.id)
-              ?.id,
-          });
+      const response = await axios.post(
+        `${API_BASE_URL}/api/chat/${activeChat.id}/message`,
+        messageData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
         }
+      );
+      setMessages((prev) => [...prev, response.data]);
+      setNewMessage("");
+
+      if (socket) {
+        socket.emit("send-message", {
+          chatId: activeChat.id,
+          message: response.data,
+          recipientId: activeChat.participants.find((p) => p.id !== user?.id)?.id,
+        });
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      if (error.response) {
+        console.error("Error sending message:", error.response.data);
+      } else {
+        console.error("Error sending message:", error.message);
+      }
     }
   };
 
@@ -154,6 +159,7 @@ const Chat = () => {
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div className="h-[calc(100vh-8rem)] flex gap-6">

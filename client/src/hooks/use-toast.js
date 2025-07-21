@@ -1,7 +1,7 @@
 import * as React from "react";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const TOAST_REMOVE_DELAY = 5000; // reduced for better UX
 
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
@@ -18,6 +18,14 @@ function genId() {
 }
 
 const toastTimeouts = new Map();
+
+// Move dispatch before addToRemoveQueue to fix ReferenceError
+function dispatch(action) {
+  memoryState = reducer(memoryState, action);
+  listeners.forEach((listener) => {
+    listener(memoryState);
+  });
+}
 
 const addToRemoveQueue = (toastId) => {
   if (toastTimeouts.has(toastId)) {
@@ -88,15 +96,7 @@ export const reducer = (state, action) => {
 };
 
 const listeners = [];
-
 let memoryState = { toasts: [] };
-
-function dispatch(action) {
-  memoryState = reducer(memoryState, action);
-  listeners.forEach((listener) => {
-    listener(memoryState);
-  });
-}
 
 function toast(props) {
   const id = genId();
