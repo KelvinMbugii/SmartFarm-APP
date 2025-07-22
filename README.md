@@ -104,6 +104,14 @@ npm run dev            # Launch React app
 
 ---
 
+## Deployed link
+bash 
+```
+smart-farm-j86eehnm9-kelvin-mbugiis-projects.vercel.app
+```
+
+---
+
 ## 📬 Contact
 
 For questions, ideas, or collaboration opportunities:
