@@ -50,83 +50,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // MongoDB connection
 mongoose
-  .connect(process.env.MONGODB_URL)
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log("MongoDB connected!"))
   .catch((err) => console.error("MongoDB connection error:", err));
-
-// Improved auth middleware for REST routes
-const authMiddleware = async (req, res, next) => {
-  try {
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-    if (!token) {
-      console.log("Authorization header missing or malformed");
-      return res.status(401).json({ message: "Not authorized, no token" });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Decoded JWT payload:", decoded);
-
-    if (!decoded.userId) {
-      console.log("Token payload missing userId");
-      return res.status(401).json({ message: "Invalid token payload" });
-    }
-
-    const user = await User.findById(decoded.userId).select("-password");
-    if (!user) {
-      console.log("User not found with id:", decoded.userId);
-      return res.status(401).json({ message: "Not authorized, user not found" });
-    }
-
-    if (!user.isActive) {
-      console.log("User account is deactivated:", decoded.userId);
-      return res.status(401).json({ message: "Account is deactivated" });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error("Auth error:", error);
-    res.status(401).json({ message: "Not authorized, token failed" });
-  }
-};
-
-// Socket.IO auth middleware
-io.use(async (socket, next) => {
-  try {
-    const token = socket.handshake.auth?.token;
-    if (!token) {
-      console.log("Socket auth token missing");
-      return next(new Error("Authentication error"));
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("Socket decoded JWT payload:", decoded);
-
-    if (!decoded.userId) {
-      console.log("Socket token missing userId");
-      return next(new Error("Authentication error"));
-    }
-
-    const user = await User.findById(decoded.userId).select("-password");
-    if (!user) {
-      console.log("Socket user not found:", decoded.userId);
-      return next(new Error("Authentication error"));
-    }
-
-    if (!user.isActive) {
-      console.log("Socket user account deactivated:", decoded.userId);
-      return next(new Error("Authentication error"));
-    }
-
-    socket.user = user;
-    next();
-  } catch (error) {
-    console.error("Socket auth error:", error);
-    next(new Error("Authentication error"));
-  }
-});
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
