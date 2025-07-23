@@ -33,7 +33,7 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://smart-farm-app.vercel.app",
+  "https://smart-farm-app.vercel.app/",
 ];
 // Middleware
 app.use(
