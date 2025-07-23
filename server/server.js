@@ -27,10 +27,38 @@ const server = http.createServer(app);
 
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://smart-farm-app.vercel.app",
+];
+// Middleware
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if(!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error("Not allowed by CORS"))
+    },
+    credentials: true,
+    methods: 'GET, POST, PUT, DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
+   
+  })
+);
+
+app.options("*", cors());
+
 // Setup Socket.IO with CORS and transports fallback
+
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_URL,
+    origin: function (origin, callback){
+      if (!origin || allowedOrigins.includes(origin)){
+        callback(null, true)
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -38,22 +66,6 @@ const io = new Server(server, {
 });
 
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://smart-farm-app.vercel.app/",
-];
-// Middleware
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if(!origin || allowedOrigins.includes(origin)) return cb(null, true);
-    },
-    credentials: true,
-    methods: 'GET, POST, PUT, DELETE',
-    allowedHeaders: 'content-Type, Authorization',
-   
-  })
-);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
