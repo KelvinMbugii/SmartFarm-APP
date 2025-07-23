@@ -213,7 +213,7 @@ const Register = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                pattern="^\+?[0-9 ()-]{7,}"
+                pattern="^\\+?[0-9 ()-]{7,}$"
                 title="Please enter a valid phone number"
                 autoComplete="tel"
               />
