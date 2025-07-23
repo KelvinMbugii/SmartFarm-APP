@@ -49,7 +49,7 @@ app.use(
   })
 );
 
-app.options("*", cors());
+//app.options("*", cors());
 
 // Setup Socket.IO with CORS and transports fallback
 
