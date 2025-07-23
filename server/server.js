@@ -10,6 +10,9 @@ const path = require("path");
 
 const User = require("./models/user");
 
+// dotenv
+dotenv.config();
+
 // Import routes
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/users");

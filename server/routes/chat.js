@@ -45,13 +45,13 @@ router.post('/', auth.protect, async (req, res) =>{
         const { participantId, message} = req.body;
 
         let chat = await Chat.findOne({
-            participants: { $all: [req.user.userId, participantsId]},
+            participants: { $all: [req.user.userId, participantId]},
             chatType: 'private'
         });
 
         if (!chat){
             chat = new Chat({
-                participants: [ req.user.userId, participantsId],
+                participants: [ req.user.userId, participantId],
                 chatType: 'private'
             });
         }

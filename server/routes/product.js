@@ -52,7 +52,7 @@ router.get('/:id', async (req, res) => {
             'seller', 'name location phone email'
         );
 
-        if (!equipment){
+        if (!product){
             return res.status(404).json({error: 'Product not found'});
         }
 
@@ -98,7 +98,7 @@ router.put('/:id', auth.protect, auth.authorizeRoles, async (req, res) => {
             return res.status(404).json({error: 'Product not found'});
         }
 
-        Object.assign(equipment, req.body);
+        Object.assign(product, req.body);
         await product.save();
 
         res.json(product);
