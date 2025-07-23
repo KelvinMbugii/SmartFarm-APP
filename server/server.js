@@ -103,6 +103,10 @@ app.use("/api/market", marketRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/product", productRoutes);
 
+app.all('/*', (req, res) => {
+  res.status(404).send("Not found")
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
