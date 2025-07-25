@@ -4,10 +4,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Tractor } from "lucide-react";
+import { Tractor, Mail, Lock, Phone, User } from "lucide-react"; 
 import { toast } from "sonner";
 
 const Register = () => {
@@ -22,18 +21,17 @@ const Register = () => {
     crops: "",
     equipment: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const { registerUser, user} = useAuth();
 
-  // if (loading) {
-  //   return <div>Loading...</div>;
-  // }
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(""); 
+
+  const { registerUser, user } = useAuth();
 
   if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Validates required fields based on role
+  // Validate required fields based on role
   const isFormValid = () => {
     const basicFieldsFilled =
       formData.name &&
@@ -44,9 +42,14 @@ const Register = () => {
       formData.phone;
 
     if (formData.role === "farmer") {
-      // For farmers, farm-related fields must also be set and crops/equipment non-empty arrays
-      const cropsArr = formData.crops.split(",").map((c) => c.trim()).filter(Boolean);
-      const equipmentArr = formData.equipment.split(",").map((e) => e.trim()).filter(Boolean);
+      const cropsArr = formData.crops
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean);
+      const equipmentArr = formData.equipment
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
       return (
         basicFieldsFilled &&
         formData.farmSize &&
@@ -54,21 +57,18 @@ const Register = () => {
         equipmentArr.length > 0
       );
     }
-
     return basicFieldsFilled;
   };
 
-  const handleChange = (e) =>
+  const handleChange = (e) => {
+    setError(""); 
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-
-  const handleSelectChange = (value) =>
-    setFormData((prev) => ({ ...prev, role: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!isFormValid()) {
-      console.log("Invalid form submission:", formData);
       toast.error("Please fill in all required fields correctly.");
       return;
     }
@@ -101,10 +101,11 @@ const Register = () => {
         farmDetails,
       };
 
-      
       await registerUser(userData);
+      setError(""); 
     } catch (error) {
       console.error("Registration error:", error);
+      setError(error?.message || "Registration failed");
       toast.error(error?.message || "Registration failed");
     } finally {
       setIsLoading(false);
@@ -237,7 +238,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  pattern="^\\+?[0-9 ()-]{7,}$"
+                  pattern="^\+?[0-9 ()-]{7,}$"
                   title="Please enter a valid phone number"
                   autoComplete="tel"
                   className="pl-10"
