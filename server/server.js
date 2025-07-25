@@ -1,27 +1,25 @@
-const dotenv = require('dotenv');
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const http = require('http');
-const {Server} = require('socket.io');
-const jwt = require('jsonwebtoken');
-const path = require('path');
+const dotenv = require("dotenv");
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
+const path = require("path");
 
-
-const User = require('./models/user');
-
+const User = require("./models/user");
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const chatRoutes = require('./routes/chat');
-const marketRoutes = require('./routes/market');
-const weatherRoutes = require('./routes/weather');
-const productRoutes = require('./routes/product');
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/users");
+const chatRoutes = require("./routes/chat");
+const marketRoutes = require("./routes/market");
+const weatherRoutes = require("./routes/weather");
+const productRoutes = require("./routes/product");
 
 // Import socket event handlers
-const chatHandler = require('./socket/chatHandler');
-const marketHandler = require('./socket/marketHandler');
+const chatHandler = require("./socket/chatHandler");
+const marketHandler = require("./socket/marketHandler");
 
 // dotenv
 dotenv.config();
@@ -33,18 +31,28 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 // Setup Socket.IO with CORS and transports fallback
 
-
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://smart-farm-app.vercel.app/",
+  "https://smart-farm-app.vercel.app",
+  "https://smartfarm-app.onrender.com",
 ];
+
+const normalizeOrigin = (origin) =>
+  origin?.replace(/\/$/, "").toLowerCase()
 
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback){
-      if (!origin || allowedOrigins.includes(origin)){
-        callback(null, true)
-      } else {
+    origin: function (origin, callback) {
+      if (!origin ) return callback(null, true);
+      const normalizedOrigin = path.normalizeOrigin(origin);
+      const allowed = allowedOrigins.some(
+        (allowedOrigin) => normalizeOrigin(allowedOrigin === normalizedOrigin)
+      );
+      if(allowed) {
+        callback(null, true);
+      }
+      else {
+        console.log("Blocked CORS Origin:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
@@ -56,26 +64,28 @@ const io = new Server(server, {
 });
 
 //JWT auth middleware for sockets
-io.use(async(socket, next) => {
-  try{
-    const token = socket.handshake.auth?.token ||socket.handshake.headers?.authorization?.split(" ")[1];
-    console.log("Received Token:", token)
-    if(!token) {
+io.use(async (socket, next) => {
+  try {
+    const token =
+      socket.handshake.auth?.token ||
+      socket.handshake.headers?.authorization?.split(" ")[1];
+    console.log("Received Token:", token);
+    if (!token) {
       return next(new Error("Authentication token missing"));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId).select("-password");
 
-    if(!user){
+    if (!user) {
       console.log("User not Found");
       return next(new Error("Authentication error: Invalid user"));
     }
 
-    socket.user=user;
+    socket.user = user;
     next();
-  } catch(err){
-    next(new Error("Authentication error"))
+  } catch (err) {
+    next(new Error("Authentication error"));
   }
 });
 
@@ -83,22 +93,18 @@ io.use(async(socket, next) => {
 app.use(
   cors({
     origin: (origin, cb) => {
-      if(!origin || allowedOrigins.includes(origin)) return cb(null, true);
-     
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
       else cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: 'GET, POST, PUT, DELETE',
-    allowedHeaders: ['Content-Type, Authorization'],
-   
+    methods: "GET, POST, PUT, DELETE",
+    allowedHeaders: "Content-Type, Authorization",
   })
 );
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
 
 // MongoDB connection
 mongoose
@@ -123,14 +129,12 @@ io.on("connection", (socket) => {
 });
 
 // Mount routes (add authMiddleware in routes if routes require protection)
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/chat', chatRoutes);
-app.use('/api/market', marketRoutes);
-app.use('/api/weather', weatherRoutes);
-app.use('/api/product', productRoutes);
-
-
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/market", marketRoutes);
+app.use("/api/weather", weatherRoutes);
+app.use("/api/product", productRoutes);
 
 // Start server
 const PORT = process.env.PORT || 5000;

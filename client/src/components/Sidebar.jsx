@@ -11,7 +11,7 @@ const Sidebar = () => {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Chat", href: "/chat", icon: MessageCircle },
-    { name: "Marketplace", href: "/marketplace", icon: ShoppingCart },
+    { name: "Marketplace", href: "/marketPlace", icon: ShoppingCart },
     { name: "Weather", href: "/weather", icon: CloudSun },
     { name: "Market Prices", href: "/market", icon: TrendingUp },
     { name: "Profile", href: "/profile", icon: User },

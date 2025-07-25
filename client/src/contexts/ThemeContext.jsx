@@ -1,11 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-const ThemeContext = createContext(undefined);
+const ThemeContext = createContext();
 
 export const useTheme = () => {
   const context = useContext(ThemeContext);
-
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
@@ -13,21 +12,22 @@ export const useTheme = () => {
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    
-    if (typeof window !== "undefined") {
-      const savedTheme = localStorage.getItem("agriculture-theme");
-      return savedTheme || "light";
-    }
-    return "light";
+    const savedTheme = localStorage.getItem("agriculture-theme");
+    return savedTheme || "light";
   });
 
-  useEffect(() => {
-    localStorage.setItem("agriculture-theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+   useEffect(() => {
+     const root = document.documentElement;
+     if (theme === "dark") {
+       root.classList.add("dark");
+     } else {
+       root.classList.remove("dark");
+     }
+     localStorage.setItem("agriculture-theme", theme);
+   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
   const value = {

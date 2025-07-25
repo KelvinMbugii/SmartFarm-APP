@@ -59,74 +59,86 @@ const Login = () => {
     }));
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary rounded-full p-3">
-              <Tractor className="h-8 w-8 text-primary-foreground" />
-            </div>
-          </div>
-          <CardTitle className="text-2xl font-bold">
-            Welcome to SmartFarm
-          </CardTitle>
-          <CardDescription>Sign in to your account to continue</CardDescription>
-        </CardHeader>
+ return (
+   <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900 p-6">
+     <Card className="w-full max-w-md shadow-xl">
+       <CardHeader className="text-center">
+         <div className="flex justify-center mb-4">
+           <div className="bg-blue-100 dark:bg-blue-700 rounded-full p-4">
+             <Tractor className="h-8 w-8 text-blue-600 dark:text-blue-200" />
+           </div>
+         </div>
+         <CardTitle className="text-2xl font-extrabold mb-2">
+           Welcome to SmartFarm
+         </CardTitle>
+         <CardDescription className="text-gray-600 dark:text-gray-400">
+           Sign in to your account to continue
+         </CardDescription>
+       </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
+       <CardContent>
+         {errorMessage && (
+           <div className="mb-4 p-3 bg-red-100 dark:bg-red-500/20 border border-red-400 dark:border-red-500 text-red-700 dark:text-red-500 rounded-lg text-sm font-medium">
+             {errorMessage}
+           </div>
+         )}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            </div>
+         <form onSubmit={handleSubmit} className="space-y-6">
+           <div className="space-y-1 relative">
+             <Label htmlFor="email">Email Address</Label>
+             <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+             <Input
+               id="email"
+               name="email"
+               type="email"
+               placeholder="Enter your email"
+               value={formData.email}
+               onChange={handleChange}
+               className="pl-10"
+               required
+               autoComplete="email"
+             />
+           </div>
 
-            {/* Display error message here */}
-            {errorMessage && (
-              <p className="text-red-600 text-sm font-medium">{errorMessage}</p>
-            )}
+           <div className="space-y-1 relative">
+             <Label htmlFor="password">Password</Label>
+             <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+             <Input
+               id="password"
+               name="password"
+               type="password"
+               placeholder="Enter your password"
+               value={formData.password}
+               onChange={handleChange}
+               className="pl-10"
+               required
+               autoComplete="current-password"
+             />
+           </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
+           <Button
+             type="submit"
+             className="w-full"
+             size="lg"
+             disabled={isLoading}
+           >
+             {isLoading ? "Signing in..." : "Sign In"}
+           </Button>
+         </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">
-              Don't have an account?{" "}
-            </span>
-            <Link
-              to="/register"
-              className="text-primary hover:underline font-medium"
-            >
-              Sign up
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+         <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+           Don't have an account?{" "}
+           <Link
+             to="/register"
+             className="text-blue-600 hover:underline font-medium dark:text-blue-400"
+           >
+             Sign up
+           </Link>
+         </div>
+       </CardContent>
+     </Card>
+   </div>
+ );
 };
 
 export default Login;

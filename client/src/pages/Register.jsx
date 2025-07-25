@@ -112,79 +112,101 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-6">
-      <Card className="w-full max-w-md mx-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900 p-6">
+      <Card className="w-full max-w-md mx-4 shadow-xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-primary rounded-full p-3">
-              <Tractor className="h-8 w-8 text-primary-foreground" />
+            <div className="bg-blue-100 dark:bg-blue-700 rounded-full p-3">
+              <Tractor className="h-8 w-8 text-blue-500 dark:text-blue-200" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-extrabold mb-1">Join SmartFarm</CardTitle>
+          <CardTitle className="text-3xl font-extrabold mb-1">
+            Join SmartFarm
+          </CardTitle>
           <CardDescription className="text-gray-600 dark:text-gray-400">
             Create your account to get started
           </CardDescription>
         </CardHeader>
 
         <CardContent>
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 dark:bg-red-500/20 border border-red-400 text-red-700 dark:text-red-400 rounded-lg">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
             <div className="space-y-1">
               <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                autoComplete="name"
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  autoComplete="name"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
             {/* Email */}
             <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                autoComplete="email"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  autoComplete="email"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
             {/* Password */}
             <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="new-password"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
             {/* Role */}
             <div className="space-y-1">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={handleSelectChange} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="farmer">Farmer</SelectItem>
-                  <SelectItem value="officer">Agricultural Officer</SelectItem>
-                </SelectContent>
-              </Select>
+              <select
+                id="role"
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                required
+                className="block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+              >
+                <option value="">Select your role</option>
+                <option value="farmer">Farmer</option>
+                <option value="officer">Agricultural Officer</option>
+              </select>
             </div>
 
             {/* Location */}
@@ -205,21 +227,25 @@ const Register = () => {
             {/* Phone */}
             <div className="space-y-1">
               <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-                pattern="^\\+?[0-9 ()-]{7,}$"
-                title="Please enter a valid phone number"
-                autoComplete="tel"
-              />
+              <div className="relative">
+                <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  pattern="^\\+?[0-9 ()-]{7,}$"
+                  title="Please enter a valid phone number"
+                  autoComplete="tel"
+                  className="pl-10"
+                />
+              </div>
             </div>
 
-            {/* Farmer specific fields */}
+            {/* Farmer-specific fields */}
             {formData.role === "farmer" && (
               <>
                 <div className="space-y-1">
@@ -231,10 +257,9 @@ const Register = () => {
                     placeholder="e.g., 10 acres"
                     value={formData.farmSize}
                     onChange={handleChange}
-                    required={formData.role === "farmer"}
+                    required
                   />
                 </div>
-
                 <div className="space-y-1">
                   <Label htmlFor="crops">Crops (comma-separated)</Label>
                   <Textarea
@@ -244,10 +269,9 @@ const Register = () => {
                     value={formData.crops}
                     onChange={handleChange}
                     rows={3}
-                    required={formData.role === "farmer"}
+                    required
                   />
                 </div>
-
                 <div className="space-y-1">
                   <Label htmlFor="equipment">Equipment (comma-separated)</Label>
                   <Textarea
@@ -257,7 +281,7 @@ const Register = () => {
                     value={formData.equipment}
                     onChange={handleChange}
                     rows={3}
-                    required={formData.role === "farmer"}
+                    required
                   />
                 </div>
               </>
@@ -274,7 +298,10 @@ const Register = () => {
 
           <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline font-medium">
+            <Link
+              to="/login"
+              className="text-blue-600 hover:underline font-medium dark:text-blue-400"
+            >
               Sign in
             </Link>
           </div>

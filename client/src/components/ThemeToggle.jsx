@@ -1,15 +1,15 @@
-import Reactv from 'react';
+import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
 const ThemeToggle = () => {
-    const { theme, toogleTheme, isLight } = useTheme();
+    const { theme, toggleTheme, isLight } = useTheme();
 
     return (
         <button 
-            onClick={toogleTheme}
+            onClick={toggleTheme}
             className='theme-toggle-btn'
-            arial-label = {`Switch to ${isLight ? 'dark' :
+            aria-label = {`Switch to ${isLight ? 'dark' :
                 'light'} theme`}
             title={`Switch to ${isLight ? 'dark' : 'light'} theme`}
         >
