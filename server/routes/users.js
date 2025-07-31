@@ -1,11 +1,12 @@
 const express = require('express');
 const User = require('../models/user');
-const auth = require('../middlewares/auth');
+const { protect, authorizeRoles } = require("../middlewares/auth");
+
 
 const router = express.Router();
 
 // Get all users
-router.get('/', auth.protect, async ( req, res) => {
+router.get('/', protect, async ( req, res) => {
     try {
         const { role, search } = req.query;
 
@@ -29,7 +30,7 @@ router.get('/', auth.protect, async ( req, res) => {
 });
 
 // Get user Profile
-router.get('/:id', auth.protect, async (req, res) => {
+router.get('/:id', protect, async (req, res) => {
     try{
         const user = await User.findById(req.params.id).select('-password');
 
@@ -44,7 +45,7 @@ router.get('/:id', auth.protect, async (req, res) => {
 });
 
 // Update user profile
-router.put('/profile', auth.protect, auth.authorizeRoles('farmer', 'officer'), async (req, res) => {
+router.put('/profile', protect, authorizeRoles('farmer', 'officer'), async (req, res) => {
     try {
         const updates = req.body;
         delete updates.password;

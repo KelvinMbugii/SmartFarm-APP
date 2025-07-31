@@ -4,6 +4,11 @@ const User = require("../models/user");
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
   try {
+    // Allow OPTIONS method to pass for CORS preflight
+    if (req.method === "OPTIONS") {
+      return next();
+    }
+
     let token;
 
     if (
@@ -22,7 +27,7 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log("Decoded JWT payload:", decoded);
 
-    // Check that decoded token contains userId (adjust if payload differs)
+    // Check that decoded token contains userId 
     if (!decoded.userId) {
       console.log("Token payload missing userId");
       return res.status(401).json({ message: "Invalid token payload" });
@@ -32,7 +37,9 @@ const protect = async (req, res, next) => {
     const user = await User.findById(decoded.userId).select("-password");
     if (!user) {
       console.log("User not found with id:", decoded.userId);
-      return res.status(401).json({ message: "Not authorized, user not found" });
+      return res
+        .status(401)
+        .json({ message: "Not authorized, user not found" });
     }
 
     req.user = user;
@@ -63,3 +70,7 @@ const generateToken = (userId) => {
 };
 
 module.exports = { protect, authorizeRoles, generateToken };
+
+
+
+
