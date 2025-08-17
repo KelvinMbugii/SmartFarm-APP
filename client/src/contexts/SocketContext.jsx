@@ -14,21 +14,28 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (user && token) {
       const s = io(SERVER_URL, {
-        auth: { token },
-        transports: ["polling", "websocket"],
+        auth: { token }, 
+        transports: ["websocket"], 
+        withCredentials: true, 
       });
 
       s.on("connect", () => {
         setConnected(true);
-        s.emit("join-user", user.id); // Example custom event
+        console.log("Socket connected:", s.id);
+        s.emit("join-user", user._id); 
       });
 
-      s.on("disconnect", () => setConnected(false));
-      s.on("connect_error", (err) =>
-        console.error("Socket connect error:", err.message)
-      );
+      s.on("disconnect", () => {
+        setConnected(false);
+        console.log("Socket disconnected");
+      });
+
+      s.on("connect_error", (err) => {
+        console.error("Socket connect error:", err.message);
+      });
 
       setSocket(s);
+
       return () => {
         s.disconnect();
         setConnected(false);

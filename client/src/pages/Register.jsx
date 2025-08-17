@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Tractor, Mail, Lock, Phone, User } from "lucide-react"; 
+import { Tractor, Mail, Lock, Phone, User, MapPin, Wheat, Settings,} from "lucide-react";
 import { toast } from "sonner";
 
 const Register = () => {
@@ -23,7 +23,7 @@ const Register = () => {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
 
   const { registerUser, user } = useAuth();
 
@@ -31,7 +31,6 @@ const Register = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Validate required fields based on role
   const isFormValid = () => {
     const basicFieldsFilled =
       formData.name &&
@@ -61,7 +60,7 @@ const Register = () => {
   };
 
   const handleChange = (e) => {
-    setError(""); 
+    setError("");
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -102,7 +101,8 @@ const Register = () => {
       };
 
       await registerUser(userData);
-      setError(""); 
+      setError("");
+      toast.success("Account created successfully!");
     } catch (error) {
       console.error("Registration error:", error);
       setError(error?.message || "Registration failed");
@@ -113,34 +113,40 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900 p-6">
-      <Card className="w-full max-w-md mx-4 shadow-xl">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="bg-blue-100 dark:bg-blue-700 rounded-full p-3">
-              <Tractor className="h-8 w-8 text-blue-500 dark:text-blue-200" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-agricultural-50 to-agricultural-100 p-6">
+      <Card className="w-full max-w-lg shadow-2xl border-0 bg-gradient-to-b from-white to-agricultural-50/30 backdrop-blur-sm">
+        <CardHeader className="text-center pb-6">
+          <div className="flex justify-center mb-6">
+            <div className="bg-agricultural-100 rounded-full p-4 shadow-lg">
+              <Tractor className="h-10 w-10 text-agricultural-600" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-extrabold mb-1">
+          <CardTitle className="text-3xl font-bold mb-2 text-agricultural-900 tracking-tight">
             Join SmartFarm
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription className="text-agricultural-600 text-base">
             Create your account to get started
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-100 dark:bg-red-500/20 border border-red-400 text-red-700 dark:text-red-400 rounded-lg">
+            <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-lg text-sm font-medium">
               {error}
             </div>
           )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name */}
-            <div className="space-y-1">
-              <Label htmlFor="name">Full Name</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="text-agricultural-700 font-medium"
+              >
+                Full Name
+              </Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
                 <Input
                   id="name"
                   name="name"
@@ -150,16 +156,21 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="name"
-                  className="pl-10"
+                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
               </div>
             </div>
 
             {/* Email */}
-            <div className="space-y-1">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-agricultural-700 font-medium"
+              >
+                Email
+              </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
                 <Input
                   id="email"
                   name="email"
@@ -169,16 +180,21 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="email"
-                  className="pl-10"
+                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
               </div>
             </div>
 
             {/* Password */}
-            <div className="space-y-1">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="password"
+                className="text-agricultural-700 font-medium"
+              >
+                Password
+              </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
                 <Input
                   id="password"
                   name="password"
@@ -188,21 +204,26 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="new-password"
-                  className="pl-10"
+                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
               </div>
             </div>
 
             {/* Role */}
-            <div className="space-y-1">
-              <Label htmlFor="role">Role</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="role"
+                className="text-agricultural-700 font-medium"
+              >
+                Role
+              </Label>
               <select
                 id="role"
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
                 required
-                className="block w-full border border-gray-300 dark:border-gray-700 rounded-md p-2 focus:ring-2 focus:ring-blue-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200"
+                className="w-full h-12 rounded-md border border-agricultural-200 bg-white/80 px-3 text-agricultural-900 focus:border-agricultural-400 focus:ring-2 focus:ring-agricultural-400 focus:outline-none"
               >
                 <option value="">Select your role</option>
                 <option value="farmer">Farmer</option>
@@ -211,25 +232,39 @@ const Register = () => {
             </div>
 
             {/* Location */}
-            <div className="space-y-1">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                name="location"
-                type="text"
-                placeholder="Enter your location"
-                value={formData.location}
-                onChange={handleChange}
-                required
-                autoComplete="address-level1"
-              />
+            <div className="space-y-2">
+              <Label
+                htmlFor="location"
+                className="text-agricultural-700 font-medium"
+              >
+                Location
+              </Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <Input
+                  id="location"
+                  name="location"
+                  type="text"
+                  placeholder="Enter your location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  required
+                  autoComplete="address-level1"
+                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                />
+              </div>
             </div>
 
             {/* Phone */}
-            <div className="space-y-1">
-              <Label htmlFor="phone">Phone Number</Label>
+            <div className="space-y-2">
+              <Label
+                htmlFor="phone"
+                className="text-agricultural-700 font-medium"
+              >
+                Phone Number
+              </Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
                 <Input
                   id="phone"
                   name="phone"
@@ -241,16 +276,26 @@ const Register = () => {
                   pattern="^\+?[0-9 ()-]{7,}$"
                   title="Please enter a valid phone number"
                   autoComplete="tel"
-                  className="pl-10"
+                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
               </div>
             </div>
 
             {/* Farmer-specific fields */}
             {formData.role === "farmer" && (
-              <>
-                <div className="space-y-1">
-                  <Label htmlFor="farmSize">Farm Size</Label>
+              <div className="space-y-5 pt-4 border-t border-agricultural-200">
+                <div className="flex items-center gap-2 text-agricultural-700 font-semibold">
+                  <Wheat className="h-5 w-5" />
+                  <span>Farm Details</span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="farmSize"
+                    className="text-agricultural-700 font-medium"
+                  >
+                    Farm Size
+                  </Label>
                   <Input
                     id="farmSize"
                     name="farmSize"
@@ -259,10 +304,17 @@ const Register = () => {
                     value={formData.farmSize}
                     onChange={handleChange}
                     required
+                    className="h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="crops">Crops (comma-separated)</Label>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="crops"
+                    className="text-agricultural-700 font-medium"
+                  >
+                    Crops (comma-separated)
+                  </Label>
                   <Textarea
                     id="crops"
                     name="crops"
@@ -271,40 +323,53 @@ const Register = () => {
                     onChange={handleChange}
                     rows={3}
                     required
+                    className="bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400 resize-none"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="equipment">Equipment (comma-separated)</Label>
-                  <Textarea
-                    id="equipment"
-                    name="equipment"
-                    placeholder="e.g., Tractor, Harvester, Irrigation system"
-                    value={formData.equipment}
-                    onChange={handleChange}
-                    rows={3}
-                    required
-                  />
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="equipment"
+                    className="text-agricultural-700 font-medium"
+                  >
+                    Equipment (comma-separated)
+                  </Label>
+                  <div className="relative">
+                    <Settings className="absolute left-3 top-3 h-5 w-5 text-agricultural-400" />
+                    <Textarea
+                      id="equipment"
+                      name="equipment"
+                      placeholder="e.g., Tractor, Harvester, Irrigation system"
+                      value={formData.equipment}
+                      onChange={handleChange}
+                      rows={3}
+                      required
+                      className="pl-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400 resize-none"
+                    />
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full h-12 bg-agricultural-600 hover:bg-agricultural-700 text-black font-semibold text-base transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
               disabled={isLoading || !isFormValid()}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="text-blue-600 hover:underline font-medium dark:text-blue-400"
-            >
-              Sign in
-            </Link>
+          <div className="text-center pt-4 border-t border-agricultural-200">
+            <p className="text-agricultural-600">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-agricultural-700 hover:text-agricultural-800 font-semibold hover:underline transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
           </div>
         </CardContent>
       </Card>
