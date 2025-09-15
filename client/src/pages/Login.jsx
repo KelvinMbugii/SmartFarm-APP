@@ -115,6 +115,14 @@ const Login = () => {
                   autoComplete="current-password"
                 />
               </div>
+              <p className="text-right text-sm">
+                <Link
+                to="/forgot-Password"
+                className="text-agricultural-600 hover:underline"
+                >
+                Forgot Password?
+                </Link>
+              </p>
             </div>
 
             <Button

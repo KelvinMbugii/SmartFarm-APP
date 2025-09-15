@@ -44,7 +44,9 @@ const userSchema = new mongoose.Schema({
         farmSize: String,
         crops: [String],
         equipment: [String]
-    }
+    },
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
 } ,{
     timestamps: true
 });

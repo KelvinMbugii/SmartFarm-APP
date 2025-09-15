@@ -9,6 +9,9 @@ import { Toaster } from "@/components/ui/sonner";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 import Chat from "./pages/Chat";
 import Marketplace from "./pages/MarketPlace";
 import Market from "./pages/Market";
@@ -31,7 +34,10 @@ function App() {
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
+                
 
                 {/* Protected routes */}
                 <Route
