@@ -184,5 +184,14 @@ router.post('/reset-password/:token', async (req, res) => {
 
 });
 
+// Admin Dashboard
+router.get("/admin/dashboard", auth.protect, auth.authorizeRoles(admin), (req, res) => {
+  res.json({
+    message: "Welcome to the Admin Dashboard",
+    user: req.user,
+    activities: []
+  });
+})
+
 
 module.exports = router;

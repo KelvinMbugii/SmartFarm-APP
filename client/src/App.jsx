@@ -12,6 +12,8 @@ import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
+import AdminDashboard from "./pages/AdminDashboard";
+
 import Chat from "./pages/Chat";
 import Marketplace from "./pages/MarketPlace";
 import Market from "./pages/Market";
@@ -36,6 +38,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 
 

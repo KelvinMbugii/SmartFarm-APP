@@ -225,7 +225,7 @@ const Register = () => {
                 required
                 className="w-full h-12 rounded-md border border-agricultural-200 bg-white/80 px-3 text-agricultural-900 focus:border-agricultural-400 focus:ring-2 focus:ring-agricultural-400 focus:outline-none"
               >
-                <option value="">Select your role</option>
+                <option value="">Select Role</option>
                 <option value="farmer">Farmer</option>
                 <option value="officer">Agricultural Officer</option>
               </select>
