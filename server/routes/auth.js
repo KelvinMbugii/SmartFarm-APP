@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/user')
+const User = require('../models/User')
 const auth = require('../middlewares/auth');
 
 // Forget password logic
@@ -184,14 +184,14 @@ router.post('/reset-password/:token', async (req, res) => {
 
 });
 
-// Admin Dashboard
-router.get("/admin/dashboard", auth.protect, auth.authorizeRoles(admin), (req, res) => {
-  res.json({
-    message: "Welcome to the Admin Dashboard",
-    user: req.user,
-    activities: []
-  });
-})
+//Admin Dashboard
+// router.get("/admin/dashboard", auth.protect, auth.authorizeRoles("admin"), (req, res) => {
+//   res.json({
+//     message: "Welcome to the Admin Dashboard",
+//     user: req.user,
+//     activities: []
+//   });
+// })
 
 
 module.exports = router;
