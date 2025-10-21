@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-import AdminDashboard from "./pages/AdminDashboard";
+
 
 import Chat from "./pages/Chat";
 import Marketplace from "./pages/MarketPlace";
@@ -31,14 +31,14 @@ function App() {
       <AuthProvider>
         <SocketProvider>
           <Router>
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-neutral-light dark:bg-neutral-dark text-neutral-dark dark:text-neutral-light transition-colors duration-300">
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
-                <Route path="/admin" element={<AdminDashboard />} />
+                
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 
 

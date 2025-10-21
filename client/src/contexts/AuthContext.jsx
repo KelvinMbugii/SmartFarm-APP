@@ -54,29 +54,29 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token, fetchUser]);
 
-  // Initialize Socket.IO with token
-  useEffect(() => {
-    if (token && user) {
-      const newSocket = io("https://smartfarm-app.onrender.com", {
-        auth: { token },
-        transports: ["websocket"], 
-      });
+  // // Initialize Socket.IO with token
+  // useEffect(() => {
+  //   if (token && user) {
+  //     const newSocket = io("https://smartfarm-app.onrender.com", {
+  //       auth: { token },
+  //       transports: ["websocket"], 
+  //     });
 
-      setSocket(newSocket);
+  //     setSocket(newSocket);
 
-      newSocket.on("connect", () => {
-        console.log("Socket connected:", newSocket.id);
-      });
+  //     newSocket.on("connect", () => {
+  //       console.log("Socket connected:", newSocket.id);
+  //     });
 
-      newSocket.on("disconnect", () => {
-        console.log("Socket disconnected");
-      });
+  //     newSocket.on("disconnect", () => {
+  //       console.log("Socket disconnected");
+  //     });
 
-      return () => {
-        newSocket.disconnect();
-      };
-    }
-  }, [token, user]);
+  //     return () => {
+  //       newSocket.disconnect();
+  //     };
+  //   }
+  // }, [token, user]);
 
   // Login handler
   const login = async (email, password) => {

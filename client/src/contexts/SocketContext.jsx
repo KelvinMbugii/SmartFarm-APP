@@ -3,8 +3,7 @@ import { io } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 
 const SERVER_URL = import.meta.env.VITE_API_BASE_URL;
-
-const SocketContext = createContext();
+const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
   const { user, token } = useAuth();
@@ -12,37 +11,56 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    if (user && token) {
-      const s = io(SERVER_URL, {
-        auth: { token }, 
-        transports: ["websocket"], 
-        withCredentials: true, 
-      });
+    // Only connect when user & token are available
+    if (!user || !token) return;
 
-      s.on("connect", () => {
-        setConnected(true);
-        console.log("Socket connected:", s.id);
-        s.emit("join-user", user._id); 
-      });
+    console.log("Connecting to socket server:", SERVER_URL);
 
-      s.on("disconnect", () => {
-        setConnected(false);
-        console.log("Socket disconnected");
-      });
+    //  Configure socket with better reliability
+    const s = io(SERVER_URL, {
+      auth: { token },
+      transports: ["websocket"],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 3000,
+      timeout: 10000, // Wait 10s before failing
+    });
 
-      s.on("connect_error", (err) => {
-        console.error("Socket connect error:", err.message);
-      });
+    // --- Socket event handlers ---
+    s.on("connect", () => {
+      setConnected(true);
+      console.log("Socket connected:", s.id);
 
-      setSocket(s);
+      if (user?._id) {
+        s.emit("join-user", user._id);
+        console.log("Joined user room:", user._id);
+      }
+    });
 
-      return () => {
-        s.disconnect();
-        setConnected(false);
-        setSocket(null);
-      };
-    }
-  }, [user, token]);
+    s.on("disconnect", (reason) => {
+      setConnected(false);
+      console.warn(" Socket disconnected:", reason);
+    });
+
+    s.on("connect_error", (err) => {
+      console.error("Socket connection error:", err.message);
+    });
+
+    s.io.on("reconnect_attempt", (attempt) => {
+      console.log(`Reconnect attempt #${attempt}`);
+    });
+
+    // --- Save and cleanup ---
+    setSocket(s);
+
+    return () => {
+      console.log("🧹 Cleaning up socket...");
+      s.disconnect();
+      setConnected(false);
+      setSocket(null);
+    };
+  }, [user, token]); // Reconnect if user/token changes
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>
@@ -53,6 +71,9 @@ export const SocketProvider = ({ children }) => {
 
 export const useSocket = () => {
   const context = useContext(SocketContext);
-  if (!context) throw new Error("useSocket must be used within SocketProvider");
+  if (!context) {
+    throw new Error("useSocket must be used within a SocketProvider");
+  }
   return context;
 };
+export default SocketContext;

@@ -1,8 +1,9 @@
 import axios from "axios";
 
+const env = typeof import.meta !== "undefined" ? import.meta.env || {} : {};
 const MARKET_API_BASE =
-  process.env.REACT_APP_MARKET_API_BASE || "https://api.data.gov.in/resource";
-const API_KEY = process.env.REACT_APP_MARKET_API_KEY || "demo-key";
+  env.VITE_MARKET_API_BASE || "https://api.data.gov.in/resource";
+const API_KEY = env.VITE_MARKET_API_KEY || "demo-key";
 
 class MarketService {
   async getMarketPrices(commodity = "", state = "") {
