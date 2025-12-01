@@ -7,8 +7,6 @@ const path = require("path");
 const { Server } = require("socket.io");
 const setupSocketAuth = require("./middlewares/socketAuth");
 
-// Import models
-const User = require("./models/User");
 
 // Import routes
 const authRoutes = require("./routes/auth");
