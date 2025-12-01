@@ -129,12 +129,12 @@ const DashboardOverview = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActions.map(({ label, icon: Icon, color }) => (
+            {quickActions.map(({ label, icon: Icon, color, href }) => (
               <Button
                 key={label}
                 variant="outline"
                 className="h-20 flex flex-col justify-center"
-                onclick={() => navigate(href)}
+                onClick={() => navigate(href)}
               >
                 <div className={`p-2 rounded-full ${color}`}>
                   <Icon className="h-5 w-5 text-white" />

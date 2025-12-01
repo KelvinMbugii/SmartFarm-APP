@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   TrendingUp,
-  DollarSign,
   Droplets,
   Wind,
   Sun,
@@ -56,21 +55,21 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
   return (
-    <motion.div className="space-y-8 p-6">
-      {/* Dashboard Overview Section */}
+    <motion.div className="space-y-8 p-6 bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground">
+      {/* Dashboard Overview */}
       <DashboardOverview />
 
       {/* Weather Section */}
       <AnimatedCard delay={0.4}>
-        <div className="card-header flex justify-between items-center">
-          <h2 className="card-title">Today's Weather</h2>
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-semibold">Today's Weather</h2>
           {weatherData?.condition?.includes("cloud") ? (
             <Cloud className="w-6 h-6 text-accent" />
           ) : (
@@ -79,16 +78,16 @@ const Dashboard = () => {
         </div>
 
         {weatherData ? (
-          <div className="weather-content mt-3">
+          <div className="space-y-2">
             <p className="text-3xl font-bold">{weatherData.temperature}°C</p>
             <p className="text-sm">{weatherData.condition}</p>
-            <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
-              <span>
-                <Droplets className="inline-block w-4 h-4 mr-1" />
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Droplets className="w-4 h-4" />
                 {weatherData.humidity}%
               </span>
-              <span>
-                <Wind className="inline-block w-4 h-4 mr-1" />
+              <span className="flex items-center gap-1">
+                <Wind className="w-4 h-4" />
                 {weatherData.windSpeed} m/s
               </span>
             </div>
@@ -100,16 +99,16 @@ const Dashboard = () => {
 
       {/* Market Prices Section */}
       <AnimatedCard delay={0.6}>
-        <div className="card-header flex justify-between items-center">
-          <h2 className="card-title">Market Prices</h2>
-          <TrendingUp className="w-6 h-6 text-green-500" />
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-semibold">Market Prices</h2>
+          <TrendingUp className="w-6 h-6 text-primary" />
         </div>
 
-        <div className="space-y-3 mt-3">
+        <div className="space-y-3">
           {marketPrices.map((price) => (
             <div
               key={price.id}
-              className="flex justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
+              className="flex justify-between p-3 rounded-lg bg-card text-card-foreground transition-colors duration-300 dark:bg-card dark:text-card-foreground"
             >
               <div>
                 <p className="font-medium">{price.commodity}</p>
@@ -125,20 +124,18 @@ const Dashboard = () => {
       </AnimatedCard>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-4">
+      <div className="flex justify-end gap-4 mt-4">
         <motion.button
-          className="action-btn secondary"
+          className="px-4 py-2 rounded-lg border border-border bg-background text-foreground hover:bg-primary hover:text-primary-foreground transition-colors duration-200 flex items-center gap-2"
           whileHover={{ scale: 1.05 }}
           onClick={handleRefresh}
         >
-          <RefreshCw
-            className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
         </motion.button>
 
         <motion.button
-          className="action-btn primary"
+          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 flex items-center gap-2"
           whileHover={{ scale: 1.05 }}
           onClick={() => setChatModalOpen(true)}
         >
@@ -147,7 +144,7 @@ const Dashboard = () => {
         </motion.button>
 
         <motion.button
-          className="action-btn primary"
+          className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-colors duration-200 flex items-center gap-2"
           whileHover={{ scale: 1.05 }}
           onClick={() => setPriceAlertModalOpen(true)}
         >

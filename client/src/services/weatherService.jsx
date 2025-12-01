@@ -1,26 +1,19 @@
-import axios from "axios";
-
-const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY || "demo-key";
-const WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5";
+import api from "./api";
 
 class WeatherService {
   async getCurrentWeather(location) {
     try {
-      const response = await axios.get(`${WEATHER_BASE_URL}/weather`, {
-        params: {
-          q: location,
-          appid: WEATHER_API_KEY,
-          units: "metric",
-        },
+      const { data } = await api.get("/api/weather", {
+        params: { location },
       });
 
       return {
-        temperature: Math.round(response.data.main.temp),
-        condition: response.data.weather[0].description,
-        humidity: response.data.main.humidity,
-        windSpeed: response.data.wind.speed,
-        icon: response.data.weather[0].icon,
-        location: response.data.name,
+        temperature: Math.round(data.current.temperature),
+        condition: data.current.description,
+        humidity: data.current.humidity,
+        windSpeed: data.current.windSpeed,
+        icon: data.current.icon,
+        location: location || "Current Location",
       };
     } catch (error) {
       console.error("Weather API error:", error);
@@ -38,34 +31,19 @@ class WeatherService {
 
   async getForecast(location, days = 5) {
     try {
-      const response = await axios.get(`${WEATHER_BASE_URL}/forecast`, {
-        params: {
-          q: location,
-          appid: WEATHER_API_KEY,
-          units: "metric",
-          cnt: days * 8, // 8 forecasts per day (3-hour intervals)
-        },
+      const { data } = await api.get("/api/weather", {
+        params: { location },
       });
 
-      // Group by day and take one forecast per day
-      const dailyForecasts = [];
-      const processedDates = new Set();
-
-      response.data.list.forEach((item) => {
-        const date = new Date(item.dt * 1000).toDateString();
-        if (!processedDates.has(date) && dailyForecasts.length < days) {
-          dailyForecasts.push({
-            date: item.dt_txt,
-            temperature: Math.round(item.main.temp),
-            condition: item.weather[0].description,
-            humidity: item.main.humidity,
-            icon: item.weather[0].icon,
-          });
-          processedDates.add(date);
-        }
-      });
-
-      return dailyForecasts;
+      return (
+        data.forecast?.slice(0, days).map((item) => ({
+          date: item.date,
+          temperature: Math.round(item.temperature),
+          condition: item.description,
+          humidity: item.humidity,
+          icon: item.icon,
+        })) || []
+      );
     } catch (error) {
       console.error("Forecast API error:", error);
       // Fallback to mock data

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Bell, TrendingUp, TrendingDown } from "lucide-react";
 import marketService from "../services/MarketService";
@@ -14,6 +14,15 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setAlertData((prev) => ({
+        ...prev,
+        commodity,
+      }));
+    }
+  }, [commodity, isOpen]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -22,7 +31,11 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
       await marketService.createPriceAlert(
         alertData.commodity,
         parseFloat(alertData.targetPrice),
-        alertData.condition
+        alertData.condition,
+        {
+          email: alertData.email,
+          sms: alertData.sms,
+        }
       );
 
       setSuccess(true);

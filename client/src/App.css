@@ -1,68 +1,30 @@
 /* CSS Custom Properties for Theme System */
 :root {
-  /* Light Theme Colors */
-  --color-primary: #2E5A1C;
-  --color-secondary: #8B4513;
-  --color-background: #FFFAF0;
-  --color-text: #333333;
-  --color-accent: #DAA520;
-  
-  /* Derived Colors */
-  --color-primary-light: #4A7C35;
-  --color-primary-dark: #1E3D12;
-  --color-secondary-light: #A0522D;
-  --color-secondary-dark: #654321;
-  --color-accent-light: #F4D03F;
-  --color-accent-dark: #B8860B;
-  
-  /* Surface Colors */
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F8F8F8;
-  --color-border: #E5E5E5;
-  --color-shadow: rgba(0, 0, 0, 0.1);
-  
-  /* Text Colors */
-  --color-text-secondary: #666666;
-  --color-text-muted: #999999;
-  
-  /* Status Colors */
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-background: var(--background);
+  --color-text: var(--foreground);
+  --color-accent: var(--accent);
+
+  --color-primary-light: color-mix(in srgb, var(--primary) 80%, white 20%);
+  --color-primary-dark: color-mix(in srgb, var(--primary) 75%, black 25%);
+  --color-secondary-light: color-mix(in srgb, var(--secondary) 80%, white 20%);
+  --color-secondary-dark: color-mix(in srgb, var(--secondary) 75%, black 25%);
+  --color-accent-light: color-mix(in srgb, var(--accent) 80%, white 20%);
+  --color-accent-dark: color-mix(in srgb, var(--accent) 75%, black 25%);
+
+  --color-surface: var(--card);
+  --color-surface-hover: color-mix(in srgb, var(--card) 85%, white 15%);
+  --color-border: var(--border);
+  --color-shadow: rgba(0, 0, 0, 0.08);
+
+  --color-text-secondary: var(--muted-foreground);
+  --color-text-muted: color-mix(in srgb, var(--muted-foreground) 80%, white 20%);
+
   --color-success: #22C55E;
   --color-warning: #F59E0B;
   --color-error: #EF4444;
   --color-info: #3B82F6;
-}
-
-[data-theme="dark"] {
-  /* Dark Theme Colors */
-  --color-primary: #395144;
-  --color-secondary: #463E3F;
-  --color-background: #1A1A1A;
-  --color-text: #F5F5F5;
-  --color-accent: #FFA500;
-  
-  /* Derived Colors */
-  --color-primary-light: #4A6355;
-  --color-primary-dark: #2A3D33;
-  --color-secondary-light: #5A4F50;
-  --color-secondary-dark: #3A3334;
-  --color-accent-light: #FFB84D;
-  --color-accent-dark: #CC8400;
-  
-  /* Surface Colors */
-  --color-surface: #2A2A2A;
-  --color-surface-hover: #333333;
-  --color-border: #404040;
-  --color-shadow: rgba(0, 0, 0, 0.3);
-  
-  /* Text Colors */
-  --color-text-secondary: #CCCCCC;
-  --color-text-muted: #999999;
-  
-  /* Status Colors */
-  --color-success: #16A34A;
-  --color-warning: #D97706;
-  --color-error: #DC2626;
-  --color-info: #2563EB;
 }
 
 /* Base Styles */

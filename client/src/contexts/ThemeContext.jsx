@@ -16,15 +16,18 @@ export const ThemeProvider = ({ children }) => {
     return savedTheme || "light";
   });
 
-   useEffect(() => {
-     const root = document.documentElement;
-     if (theme === "dark") {
-       root.classList.add("dark");
-     } else {
-       root.classList.remove("dark");
-     }
-     localStorage.setItem("agriculture-theme", theme);
-   }, [theme]);
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+
+    localStorage.setItem("agriculture-theme", theme);
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));

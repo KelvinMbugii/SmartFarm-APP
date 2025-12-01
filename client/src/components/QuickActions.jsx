@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp, Droplets, Sun, MessageCircle } from 'lucide-react';
 
 const QuickActions = () => (
@@ -7,22 +8,22 @@ const QuickActions = () => (
       <h2 className="card-title">Quick Actions</h2>
     </div>
     <div className="quick-actions">
-      <button className="action-btn primary">
+      <Link to="/market" className="action-btn primary">
         <TrendingUp className="w-5 h-5" />
         Check Prices
-      </button>
-      <button className="action-btn secondary">
+      </Link>
+      <Link to="/marketplace" className="action-btn secondary">
         <Droplets className="w-5 h-5" />
         Water Crops
-      </button>
-      <button className="action-btn secondary">
+      </Link>
+      <Link to="/weather" className="action-btn secondary">
         <Sun className="w-5 h-5" />
         Weather Forecast
-      </button>
-      <button className="action-btn secondary">
+      </Link>
+      <Link to="/chat" className="action-btn secondary">
         <MessageCircle className="w-5 h-5" />
         Contact Expert
-      </button>
+      </Link>
     </div>
   </div>
 );

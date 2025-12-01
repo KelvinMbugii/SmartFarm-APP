@@ -19,6 +19,9 @@ import Marketplace from "./pages/MarketPlace";
 import Market from "./pages/Market";
 import Weather from "./pages/Weather";
 import Profile from "./pages/Profile";
+import Knowledge from "./pages/Knowledge";
+import Consultations from "./pages/Consultations";
+import Forums from "./pages/Forums";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -52,9 +55,12 @@ function App() {
                   }
                 >
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="knowledge" element={<Knowledge />} />
+                  <Route path="consultations" element={<Consultations />} />
                   <Route path="chat" element={<Chat />} />
                   <Route path="market" element={<Market />} />
                   <Route path="MarketPlace" element={<Marketplace/>}/>
+                  <Route path="forums" element={<Forums />} />
                   <Route path="weather" element={<Weather />} />
                   <Route path="profile" element={<Profile />} />
                 </Route>

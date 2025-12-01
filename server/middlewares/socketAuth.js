@@ -7,7 +7,7 @@ module.exports = (io) => {
       const token = socket.handshake.auth?.token;
 
       // 🔍 Log incoming token for debugging
-      console.log("Socket.IO auth attempt. Token:", token);
+      console.log("Socket.IO auth attempt. Token:", token ? "Present" : "Missing");
 
       if (!token) {
         console.warn("Socket.IO auth failed: No token provided");

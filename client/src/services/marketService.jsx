@@ -1,45 +1,60 @@
-import axios from "axios";
-
-const env = typeof import.meta !== "undefined" ? import.meta.env || {} : {};
-const MARKET_API_BASE =
-  env.VITE_MARKET_API_BASE || "https://api.data.gov.in/resource";
-const API_KEY = env.VITE_MARKET_API_KEY || "demo-key";
+import api from "./api";
 
 class MarketService {
-  async getMarketPrices(commodity = "", state = "") {
+  async getMarketPrices(commodity = "", market = "", days = 30) {
     try {
-      // Using India's Open Government Data API as an example
-      const response = await axios.get(
-        `${MARKET_API_BASE}/9ef84268-d588-465a-a308-a864a43d0070`,
-        {
-          params: {
-            "api-key": API_KEY,
-            format: "json",
-            limit: 100,
-            ...(commodity && { "filters[commodity]": commodity }),
-            ...(state && { "filters[state]": state }),
-          },
-        }
-      );
+      const response = await api.get("/api/market/prices", {
+        params: {
+          commodity: commodity || undefined,
+          market: market || undefined,
+          days,
+        },
+      });
 
-      return (
-        response.data.records?.map((record) => ({
-          id: record.id || Math.random().toString(36),
-          commodity: record.commodity,
-          variety: record.variety || "Standard",
-          market: record.market,
-          price:
-            parseFloat(record.modal_price) || parseFloat(record.max_price) || 0,
-          unit: "per quintal",
-          date: record.arrival_date || new Date().toISOString(),
-          state: record.state,
-          district: record.district,
-        })) || []
-      );
+      return response.data || [];
     } catch (error) {
       console.error("Market API error:", error);
       // Fallback to mock data
       return this.getMockMarketData();
+    }
+  }
+
+  async getCommodities() {
+    try {
+      const response = await api.get("/api/market/commodities");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      console.error("Market commodities error:", error);
+      return ["Rice", "Wheat", "Corn", "Soybeans", "Cotton", "Sugar"];
+    }
+  }
+
+  async getPriceTrends(commodity = "") {
+    try {
+      const response = await api.get("/api/market/trends", {
+        params: { commodity: commodity || undefined },
+      });
+
+      return (
+        response.data?.map((item) => ({
+          date: item._id?.date,
+          price: item.avgPrice,
+          commodity: item._id?.commodity,
+        })) || []
+      );
+    } catch (error) {
+      console.error("Market trends error:", error);
+      // Generate mock trend data
+      const fallback = Array.from({ length: 30 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        return {
+          date: date.toISOString().split("T")[0],
+          price: 2000 + Math.random() * 800,
+          commodity: commodity || "Rice",
+        };
+      }).reverse();
+      return fallback;
     }
   }
 
@@ -70,7 +85,7 @@ class MarketService {
       unit: "per quintal",
       date: new Date().toISOString(),
       trend: Math.random() > 0.5 ? "up" : "down",
-      change: (Math.random() * 10 - 5).toFixed(1),
+      change: parseFloat((Math.random() * 10 - 5).toFixed(1)),
     }));
   }
 
@@ -98,7 +113,7 @@ class MarketService {
     }
   }
 
-  async createPriceAlert(commodity, targetPrice, condition) {
+  async createPriceAlert(commodity, targetPrice, condition, options = {}) {
     try {
       // In a real app, this would save to backend
       const alert = {
@@ -108,6 +123,8 @@ class MarketService {
         condition, // 'above' or 'below'
         createdAt: new Date().toISOString(),
         active: true,
+        notifyEmail: options.email || null,
+        notifyBySms: Boolean(options.sms),
       };
 
       // Store in localStorage for demo

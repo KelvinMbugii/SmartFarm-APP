@@ -35,7 +35,7 @@ router.get('/', async( req, res) => {
 
         const total = await Product.countDocuments(query);
 
-        res.json({ product, totalPages: Math.ceil(total / limit),
+        res.json({ products: product, totalPages: Math.ceil(total / limit),
             currentPage: page, total
         });
 

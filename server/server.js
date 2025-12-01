@@ -17,21 +17,18 @@ const chatRoutes = require("./routes/chat");
 const marketRoutes = require("./routes/market");
 const weatherRoutes = require("./routes/weather");
 const productRoutes = require("./routes/product");
+const knowledgeRoutes = require("./routes/knowledge");
+const consultationRoutes = require("./routes/consultation");
+const forumRoutes = require("./routes/forum");
 
 // Import socket handlers
 const chatHandler = require("./socket/chatHandler");
 const marketHandler = require("./socket/marketHandler");
 
-// Import middlewares
-const maintenanceMode = require("./middlewares/maintenance");
-const {
-  trackAnalytics,
-  trackSessionStart,
-  trackSessionEnd,
-} = require("./middlewares/analytics");
 
 // Import admin seeder
 //const seedAdmin = require("./utils/seedAdmin");
+const seedMarketData = require("./utils/seedMarketData");
 
 dotenv.config();
 
@@ -74,6 +71,7 @@ mongoose
   .then(async () => {
     console.log("MongoDB connected successfully!");
     //await seedAdmin(); // Create admin if not found
+    await seedMarketData(); // Seed market data
   })
   .catch((err) => console.error("MongoDB connection error:", err));
 
@@ -90,7 +88,6 @@ const io = new Server(server, {
     credentials: true,
     methods: ["GET", "POST"],
   },
-  transports: ["websocket"],
 });
 
 // Apply Socket.IO authentication middleware
@@ -122,11 +119,13 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/market", marketRoutes);
 app.use("/api/weather", weatherRoutes);
 app.use("/api/product", productRoutes);
+app.use("/api/knowledge", knowledgeRoutes);
+app.use("/api/consultation", consultationRoutes);
+app.use("/api/forum", forumRoutes);
 
-// Gracefully track session end on shutdown
+// Gracefully shutdown
 process.on("SIGINT", async () => {
   console.log("Server shutting down...");
-  await trackSessionEnd();
   process.exit(0);
 });
 

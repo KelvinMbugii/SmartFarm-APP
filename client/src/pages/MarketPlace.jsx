@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
-import { Search, Filter, Plus, Eye, MapPin } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import { Search } from "lucide-react";
 
 const Marketplace = () => {
   const [equipment, setEquipment] = useState([]);
@@ -48,69 +47,39 @@ const Marketplace = () => {
       if (priceRange.min) params.append("minPrice", priceRange.min);
       if (priceRange.max) params.append("maxPrice", priceRange.max);
 
-      const response = await fetch(`/api/equipment?${params.toString()}`);
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/product?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-      if (response.ok) {
-        const data = await response.json();
-        setEquipment(data.equipment);
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
       }
+
+      const data = await response.json();
+      setEquipment(data.products || []);
     } catch (error) {
       console.error("Error fetching equipment:", error);
-      // Mock data for development
+      // fallback data
       setEquipment([
         {
           id: "1",
           name: "John Deere 5055E Tractor",
           description:
-            "Reliable 4WD tractor perfect for small to medium farms. Well-maintained with low hours.",
+            "Reliable 4WD tractor perfect for small to medium farms.",
           category: "tractors",
           price: 25000,
           condition: "used",
-          seller: {
-            name: "Farm Supply Co.",
-            location: "California, USA",
-            phone: "+1-555-0123",
-          },
+          seller: { name: "Farm Supply Co.", location: "California, USA" },
           images: [
             "https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg",
           ],
-          specifications: {
-            brand: "John Deere",
-            model: "5055E",
-            year: 2020,
-            features: ["4WD", "Power Steering", "PTO", "Hydraulic Lift"],
-          },
-          views: 156,
-          featured: true,
-          location: "California, USA",
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: "2",
-          name: "Massey Ferguson MF 1840M",
-          description:
-            "Square baler in excellent condition. Recently serviced and ready for harvest season.",
-          category: "harvesters",
-          price: 18500,
-          condition: "used",
-          seller: {
-            name: "Green Valley Equipment",
-            location: "Texas, USA",
-            phone: "+1-555-0456",
-          },
-          images: [
-            "https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg",
-          ],
-          specifications: {
-            brand: "Massey Ferguson",
-            model: "MF 1840M",
-            year: 2019,
-            features: ["Variable Chamber", "Net Wrap", "Hydraulic Pickup"],
-          },
-          views: 89,
-          featured: false,
-          location: "Texas, USA",
-          createdAt: new Date().toISOString(),
         },
       ]);
     } finally {
@@ -131,12 +100,88 @@ const Marketplace = () => {
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat("en-US", {
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(price);
-  };
-}
 
- export default Marketplace;
+ 
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-semibold mb-4">Marketplace</h1>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <Search className="text-gray-500" />
+          <Input
+            placeholder="Search equipment..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-64"
+          />
+        </div>
+
+        <Select onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select onValueChange={setSelectedCondition}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Condition" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="new">New</SelectItem>
+            <SelectItem value="used">Used</SelectItem>
+            <SelectItem value="refurbished">Refurbished</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Equipment List */}
+      {loading ? (
+        <p>Loading equipment...</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {equipment.map((item) => (
+            <Card key={item._id || item.id}>
+              <CardHeader>
+                <CardTitle>{item.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <img
+                  src={item.images?.[0] || "https://via.placeholder.com/300x200?text=No+Image"}
+                  alt={item.name}
+                  className="w-full h-40 object-cover rounded"
+                />
+                <p className="text-sm mt-2">{item.description}</p>
+                <Badge className={`${getConditionColor(item.condition)} mt-2`}>
+                  {item.condition}
+                </Badge>
+                <p className="mt-2 font-semibold">{formatPrice(item.price)}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Seller: {item.seller?.name || "Unknown"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Location: {item.location || "Not specified"}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Marketplace;
