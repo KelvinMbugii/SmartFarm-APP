@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Search, TrendingUp, TrendingDown, Bell, Minus } from 'lucide-react';
-import marketService from '../services/MarketService';
 import PriceAlertModal from '@/components/PriceAlertModal';
+import marketService from '@/services/MarketService';
 
 const Market = () => {
   const [prices, setPrices] = useState([]);
