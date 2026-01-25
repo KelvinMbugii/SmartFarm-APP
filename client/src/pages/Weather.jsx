@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import WeatherService from "@/services/WeatherService";
 import {
   CloudSun,
   Cloud,
@@ -31,9 +32,11 @@ const Weather = () => {
     setError("");
 
     try {
-      const response = await fetch(
-        `/api/weather?location=${encodeURIComponent(location)}`
-      );
+      // const response = await fetch(
+      //   `/api/weather?location=${encodeURIComponent(location)}`
+      // );
+
+      const response = await WeatherService.getCurrentWeather();
 
       if (response.ok) {
         const data = await response.json();
