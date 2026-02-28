@@ -26,7 +26,7 @@ const marketHandler = require("./socket/marketHandler");
 
 // Import admin seeder
 //const seedAdmin = require("./utils/seedAdmin");
-const seedMarketData = require("./utils/seedMarketData");
+//const seedMarketData = require("./utils/seedMarketData");
 
 dotenv.config();
 

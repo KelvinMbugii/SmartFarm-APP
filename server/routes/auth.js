@@ -131,34 +131,51 @@ router.post('/logout', auth.protect, async (req, res) => {
 
 // Post/api/auth/forgot-password
 router.post('/forgot-password', async (req, res) => {
-  const { email } = req.body;
+ try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    const genericMsg = { message: 'Check your email, a reset link has been sent.'};
 
-  const user = await User.findOne({ email });
-  const genericMsg = { message: 'Check your email, a reset link has been sent.'};
+    if (!user) return res.status(200).json(genericMsg);
 
-  if(!user) return res.status(200).json(genericMsg);
+    // create token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-  // Create token
-  const resetToken = crypto.randomBytes(32).toString('hex');
-  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-  user.resetPasswordToken = hashedToken;
-  user.resetPasswordExpires = Date.now() + 1000 * 60 * 60;
-  await user.save();
-
-  const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-  const message = `Click here to reset your password: ${resetUrl}`;
-
-  try{
-    await sendEmail(user.email, 'Password Reset Request', message);
-    res.json(genericMsg);
-  } catch (error){
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 *  60;
     await user.save();
-    res.status(500).json({ error: 'Failed to send email'});
-  }
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+    const message = `Click here to reset your password: ${resetUrl}`;
+
+    try {
+      await sendEmail(user.email, 'Password Reset Request', message);
+      return res.json(genericMsg);
+    } catch (error) {
+      // In local/dev setup 
+      if (error.code === 'Email_CONFIG_MISSING' && process.env.NODE_ENV !== 'production'){
+        console.warn('[forgot-password] Email config missing.Returning reset link in dev mode:', resetUrl);
+        return res.status(200).json({
+          ...genericMsg,
+          debugResetLink: resetUrl,
+          debugNote: 'Email is not configured. Use debugResetLink locally.',
+        });
+      }
+
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+
+      return res.status(500).json({ error: 'Failed to send email'});
+    }
+ } catch (error){
+  return res
+    .status(500)
+    .json({ error: error.message || "Forgot password failed" });
+ }
 });
 
 // POST /api/auth/reset-password/:token
