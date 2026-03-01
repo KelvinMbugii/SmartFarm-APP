@@ -14,8 +14,8 @@ import AnimatedCard from "../components/AnimatedCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ChatModal from "../components/ChatModal";
 import PriceAlertModal from "../components/PriceAlertModal";
-import weatherService from "../services/weatherService";
-import marketService from "../services/marketService";
+import weatherService from "../services/WeatherService";
+import marketService from "../services/MarketService";
 import DashboardOverview from "../components/DashboardOverview";
 
 const Dashboard = () => {
