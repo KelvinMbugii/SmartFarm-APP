@@ -1,7 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useCallback,} from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import api from "@/services/api";
 import { toast } from "sonner";
-import { io } from "socket.io-client";
 
 const AuthContext = createContext();
 
@@ -10,17 +15,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(!!token);
   const [error, setError] = useState(null);
-  const [socket, setSocket] = useState(null);
+  const socket = null;
 
-  // Axios interceptor to attach token to requests
-  useEffect(() => {
-    api.interceptors.request.use((config) => {
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-  }, [token]);
+  // // Axios interceptor to attach token to requests
+  // useEffect(() => {
+  //   api.interceptors.request.use((config) => {
+  //     if (token) {
+  //       config.headers.Authorization = `Bearer ${token}`;
+  //     }
+  //     return config;
+  //   });
+  // }, [token]);
 
   // Fetch current user info
   const fetchUser = useCallback(async () => {
@@ -59,7 +64,7 @@ export const AuthProvider = ({ children }) => {
   //   if (token && user) {
   //     const newSocket = io("https://smartfarm-app.onrender.com", {
   //       auth: { token },
-  //       transports: ["websocket"], 
+  //       transports: ["websocket"],
   //     });
 
   //     setSocket(newSocket);
@@ -116,6 +121,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    const { data } = await api.post("/api/auth/forgot-password", { email });
+    return data;
+  }
+
+  const resetPassword = async (tokenValue, password) => {
+    const { data } = await api.post(`/api/auth/reset-password/${tokenValue}`,{
+      password,
+    });
+    return data;
+  }
+
   // Logout handler
   const logout = () => {
     setUser(null);
@@ -135,6 +152,8 @@ export const AuthProvider = ({ children }) => {
         loading,
         error,
         registerUser,
+        forgotPassword,
+        resetPassword,
         socket, // expose socket to other components
       }}
     >

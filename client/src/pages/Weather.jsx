@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import WeatherService from "@/services/WeatherService";
+import WeatherService from "@/services/WeatherService.jsx";
 import {
   CloudSun,
   Cloud,

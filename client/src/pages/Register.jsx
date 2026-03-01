@@ -4,9 +4,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Tractor, Mail, Lock, Phone, User, MapPin, Wheat, Settings,} from "lucide-react";
+import { Tractor, Mail, Lock, Phone, User, MapPin, Wheat, Settings, Eye, EyeOff} from "lucide-react";
 import { toast } from "sonner";
 
 const Register = () => {
@@ -24,6 +24,7 @@ const Register = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const { registerUser, user } = useAuth();
 
@@ -105,8 +106,8 @@ const Register = () => {
       toast.success("Account created successfully!");
     } catch (error) {
       console.error("Registration error:", error);
-      setError(error?.message || "Registration failed");
-      toast.error(error?.message || "Registration failed");
+      setError(error?.response?.data?.error || "Registration failed");
+      toast.error(error?.response?.data?.error || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -198,7 +199,7 @@ const Register = () => {
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
@@ -206,6 +207,15 @@ const Register = () => {
                   autoComplete="new-password"
                   className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
+                <button 
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-agricultural-500 hover:text-agricultural-700" 
+                aria-label={showPassword ? "Hide Password": "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
+                </button>
+                
               </div>
             </div>
 
