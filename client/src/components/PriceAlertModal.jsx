@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Bell, TrendingUp, TrendingDown } from "lucide-react";
-import marketService from "../services/MarketService.jsx";
+import marketService from "../services/marketService.jsx";
 
 const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
   const [alertData, setAlertData] = useState({

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Search, TrendingUp, TrendingDown, Bell, Minus } from 'lucide-react';
 import PriceAlertModal from '@/components/PriceAlertModal';
-import marketService from '@/services/MarketService.jsx';
+import marketService from '@/services/marketService.jsx';
 
 const Market = () => {
   const [prices, setPrices] = useState([]);
