@@ -11,6 +11,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import AgripreneurDashboard from "./pages/AgripreneurDashboard";
 import FarmerDashboard from "./pages/FarmerDashboard";
+import OfficerDashboard from "./pages/OfficerDashboard";
+import ITDashboard from "./pages/ITDashboard"
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
@@ -59,6 +61,8 @@ function App() {
                   <Route path="dashboard" element={<Dashboard />} />
                   <Route path="agripreneur-dashboard" element={<AgripreneurDashboard />} />
                   <Route path="farmer-dashboard" element={<FarmerDashboard />} />
+                  <Route path="officer-dashboard" element={<OfficerDashboard/>}/>
+                  <Route path="IT-dashboard" element={<ITDashboard/>}/>
                   <Route path="knowledge" element={<Knowledge />} />
                   <Route path="consultations" element={<Consultations />} />
                   <Route path="chat" element={<Chat />} />

@@ -238,6 +238,7 @@ const Register = () => {
                 <option value="">Select Role</option>
                 <option value="farmer">Farmer</option>
                 <option value="officer">Agricultural Officer</option>
+                <option value="agripreneur">Agripreneur</option>
               </select>
             </div>
 
@@ -283,7 +284,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  pattern="^\+?[0-9 ()-]{7,}$"
+                  pattern="^\+?[0-9 ()\-]{7,}$"
                   title="Please enter a valid phone number"
                   autoComplete="tel"
                   className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"

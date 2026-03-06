@@ -10,11 +10,27 @@ const sendEmail = require('../utils/sendEmail');
 
 const router = express.Router();
 
+const CANONICAL_ROLES = ['farmer', 'agripreneur', 'officer', 'admin'];
+const LEGACY_ROLE_MAP = {
+  agriprenuer: 'agriprenuer',
+};
+
+const normalizeRole = (role ='') => {
+  const normalized = role.toLowerCase().trim();
+};
 
 // Register route
 router.post('/register', async(req,res) => {
     try{
     const { name, email, password, role, location, phone, farmDetails} = req.body;
+
+    const normalizedRole = normalizeRole(role);
+
+    if (!CANONICAL_ROLES.includes(normalizedRole)){
+      return res.status(400).json({
+        error: `Invalid role. Allowed roles: ${CANONICAL_ROLES.join(', ')}`
+      });
+    }
 
     // Check if the user exists
     const existingUser = await User.findOne({email});
@@ -28,10 +44,10 @@ router.post('/register', async(req,res) => {
         name,
         email,
         password,
-        role,
+        role: normalizedRole,
         location,
         phone,
-        farmDetails: role === 'farmer' ? farmDetails : undefined
+        farmDetails: normalizedRole === 'farmer' ? farmDetails : undefined
     });
 
     await user.save();
@@ -202,13 +218,13 @@ router.post('/reset-password/:token', async (req, res) => {
 });
 
 //Admin Dashboard
-// router.get("/admin/dashboard", auth.protect, auth.authorizeRoles("admin"), (req, res) => {
-//   res.json({
-//     message: "Welcome to the Admin Dashboard",
-//     user: req.user,
-//     activities: []
-//   });
-// })
+router.get("/IT/dashboard", auth.protect, auth.authorizeRoles("admin"), (req, res) => {
+  res.json({
+    message: "Welcome to the Admin Dashboard",
+    user: req.user,
+    activities: []
+  });
+})
 
 
 module.exports = router;

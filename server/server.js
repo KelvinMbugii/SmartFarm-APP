@@ -69,7 +69,7 @@ mongoose
   .then(async () => {
     console.log("MongoDB connected successfully!");
     //await seedAdmin(); // Create admin if not found
-    await seedMarketData(); // Seed market data
+    //await seedMarketData(); // Seed market data
   })
   .catch((err) => console.error("MongoDB connection error:", err));
 
