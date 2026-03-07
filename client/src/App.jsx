@@ -28,6 +28,10 @@ import Consultations from "./pages/Consultations";
 import Forums from "./pages/Forums";
 import MyOrders from "./pages/MyOrders";
 import Analytics from "./pages/Analytics";
+import Notifications from "./pages/Notifications";
+import SellProduce from "./pages/SellProduce";
+import PaymentMethods from "./pages/PaymentMethods";
+import CustomerMessages from "./pages/CustomerMessages";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -100,6 +104,10 @@ function App() {
                   <Route path="marketplace" element={<Marketplace/>}/>
                   <Route path="my-orders" element={<MyOrders />} />
                   <Route path="analytics" element={<Analytics />} />
+                  <Route path="notifications" element={<Notifications />} />
+                  <Route path="sell-produce" element={<SellProduce />} />
+                  <Route path="payment-methods" element={<PaymentMethods />} />
+                  <Route path="customer-messages" element={<CustomerMessages />} />
                   <Route path="forums" element={<Forums />} />
                   <Route path="weather" element={<Weather />} />
                   <Route path="profile" element={<Profile />} />

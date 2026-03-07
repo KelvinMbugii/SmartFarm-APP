@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Card,
   CardContent,
@@ -59,6 +59,7 @@ export default function AgripreneurDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [productModal, setProductModal] = useState(null);
+  const fileRef = useRef(null);
   const [productForm, setProductForm] = useState({
     name: "",
     category: "",
@@ -141,6 +142,26 @@ export default function AgripreneurDashboard() {
     setProductModal(p._id);
   };
 
+  const onPickFiles = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const readers = files.slice(0, 3).map(
+      (f) =>
+        new Promise((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result || ""));
+          r.readAsDataURL(f);
+        })
+    );
+    Promise.all(readers).then((urls) => {
+      setProductForm((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...urls].slice(0, 5),
+      }));
+      e.target.value = "";
+    });
+  };
+
   const saveProduct = async () => {
     const payload = {
       name: productForm.name.trim(),
@@ -151,7 +172,9 @@ export default function AgripreneurDashboard() {
       unit: productForm.unit.trim() || "kg",
       location: productForm.location.trim() || user?.location,
       isOutOfStock: !!productForm.isOutOfStock,
-      images: Array.isArray(productForm.images) ? productForm.images : [],
+      images: Array.isArray(productForm.images)
+        ? productForm.images.filter(Boolean)
+        : [],
     };
     if (!payload.name || !payload.category || !payload.location) {
       toast.error("Name, category and location are required");
@@ -279,7 +302,9 @@ export default function AgripreneurDashboard() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>My Products</CardTitle>
-              <CardDescription>Add, edit, or mark out of stock</CardDescription>
+              <CardDescription>
+                Upload product photos, describe inputs, mark items out of stock.
+              </CardDescription>
             </div>
             <Button onClick={openAddProduct} className="gap-2">
               <Plus className="h-4 w-4" />
@@ -292,40 +317,72 @@ export default function AgripreneurDashboard() {
                 No products yet. Add your first product to appear in the marketplace.
               </p>
             ) : (
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {products.map((p) => (
-                  <div
-                    key={p._id}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{p.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatMoney(p.price)} / {p.unit} · Stock: {p.stockQuantity}
-                        {p.isOutOfStock && (
-                          <Badge variant="secondary" className="ml-2">Out of stock</Badge>
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[440px] overflow-y-auto">
+                {products.map((p) => {
+                  const sold = p.isOutOfStock || Number(p.stockQuantity) <= 0;
+                  const cover =
+                    p.images?.[0] ||
+                    "https://via.placeholder.com/300x200?text=No+Image";
+                  return (
+                    <Card key={p._id} className="overflow-hidden flex flex-col">
+                      <div className="aspect-[3/2] bg-muted">
+                        <img
+                          src={cover}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardContent className="pt-4 space-y-3 flex-1 flex flex-col">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">{p.name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {p.category?.replace(/_/g, " ")}
+                            </p>
+                          </div>
+                          <Badge variant={sold ? "secondary" : "default"}>
+                            {sold ? "Out of stock" : "In stock"}
+                          </Badge>
+                        </div>
+                        {p.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {p.description}
+                          </p>
                         )}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => openEditProduct(p)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => deleteProduct(p._id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                        <div className="text-sm text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {formatMoney(p.price)}
+                          </span>{" "}
+                          / {p.unit} · Stock: {p.stockQuantity}
+                          {p.location && (
+                            <span>
+                              {" "}
+                              · <span className="capitalize">{p.location}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-auto flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2"
+                            onClick={() => openEditProduct(p)}
+                          >
+                            <Pencil className="h-4 w-4" /> Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-2 text-destructive hover:text-destructive"
+                            onClick={() => deleteProduct(p._id)}
+                          >
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -401,7 +458,7 @@ export default function AgripreneurDashboard() {
       {/* Add/Edit Product Modal */}
       {productModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{productModal === "add" ? "Add Product" : "Edit Product"}</CardTitle>
               <Button variant="ghost" size="icon" onClick={() => setProductModal(null)}>
@@ -416,6 +473,44 @@ export default function AgripreneurDashboard() {
                   onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Hybrid Maize Seeds"
                 />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Product photos</Label>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={onPickFiles}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => fileRef.current?.click()}
+                  >
+                    <Package className="h-4 w-4" />
+                    Upload images
+                  </Button>
+                </div>
+                {productForm.images?.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2">
+                    {productForm.images.map((src, idx) => (
+                      <div
+                        key={idx}
+                        className="relative rounded-md overflow-hidden border"
+                      >
+                        <img
+                          src={src}
+                          alt={`Product ${idx + 1}`}
+                          className="w-full h-24 object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Category</Label>
@@ -516,3 +611,93 @@ export default function AgripreneurDashboard() {
     </div>
   );
 }
+
+
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import {
+//   Bell,
+//   CreditCard,
+//   LineChart,
+//   Package,
+//   ShoppingBasket,
+// } from "lucide-react";
+// import { Link } from "react-router-dom";
+
+// const agripreneurModules = [
+//   {
+//     title: "Product Management",
+//     description: "Create and maintain your product catalog and inventory.",
+//     href: "/marketplace",
+//     icon: Package,
+//   },
+//   {
+//     title: "Orders",
+//     description: "Track order fulfillment and post-sale order history.",
+//     href: "/my-orders",
+//     icon: ShoppingBasket,
+//   },
+//   {
+//     title: "Marketplace Analytics",
+//     description: "Monitor trends and performance across your listings.",
+//     href: "/market",
+//     icon: LineChart,
+//   },
+//   {
+//     title: "Payment Setup",
+//     description: "Configure payout details and payment preferences.",
+//     href: "/profile",
+//     icon: CreditCard,
+//   },
+//   {
+//     title: "Notifications",
+//     description: "Stay updated on new orders, stock alerts, and activity.",
+//     href: "/chat",
+//     icon: Bell,
+//   },
+// ];
+
+// export default function AgripreneurDashboard() {
+//   return (
+//     <div className="space-y-6 p-6">
+//       <div className="space-y-2">
+//         <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">
+//           SmartFarm Platform
+//         </Badge>
+//         <h1 className="text-3xl font-bold">Agripreneur Dashboard</h1>
+//         <p className="text-muted-foreground">
+//           Run your agribusiness operations from a single control center.
+//         </p>
+//       </div>
+
+//       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+//         {agripreneurModules.map((module) => {
+//           const Icon = module.icon;
+//           return (
+//             <Card key={module.title}>
+//               <CardHeader>
+//                 <CardTitle className="flex items-center gap-2 text-lg">
+//                   <Icon className="h-5 w-5 text-purple-600" />
+//                   {module.title}
+//                 </CardTitle>
+//                 <CardDescription>{module.description}</CardDescription>
+//               </CardHeader>
+//               <CardContent>
+//                 <Button asChild className="w-full">
+//                   <Link to={module.href}>Open {module.title}</Link>
+//                 </Button>
+//               </CardContent>
+//             </Card>
+//           );
+//         })}
+//       </div>
+//     </div>
+//   );
+// }

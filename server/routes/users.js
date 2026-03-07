@@ -20,13 +20,45 @@ router.get('/', protect, async ( req, res) => {
             ];
         }
 
-        const users = await User.find(query).select('name email role location phone avatar isOnline lastSeen')
-        .sort({ isOnline: -1, lastSeen: -1});
+        const users = await User.find(query)
+          .select("name email role location Phone avatar isOnline LastSeen")
+          .sort({ isOnline: -1, LastSeen: -1 });
 
-        res.json(users);
+        res.json(
+          users.map((u) => {
+            const obj = u.toObject();
+            return {
+              ...obj,
+              phone: obj.phone || obj.Phone,
+              lastSeen: obj.lastSeen || obj.LastSeen,
+            };
+          })
+        );
     } catch (error){
         res.status(500).json({ error: error.message});
     }
+});
+
+// Get online users (presence)
+router.get("/online", protect, async (req, res) => {
+  try {
+    const users = await User.find({ isOnline: true })
+      .select("name email role location Phone avatar isOnline LastSeen")
+      .sort({ LastSeen: -1 });
+
+    res.json(
+      users.map((u) => {
+        const obj = u.toObject();
+        return {
+          ...obj,
+          phone: obj.phone || obj.Phone,
+          lastSeen: obj.lastSeen || obj.LastSeen,
+        };
+      })
+    );
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Get user Profile

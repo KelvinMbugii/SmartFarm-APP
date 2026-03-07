@@ -24,6 +24,7 @@ const aiRoutes = require("./routes/ai");
 // Import socket handlers
 const chatHandler = require("./socket/chatHandler");
 const marketHandler = require("./socket/marketHandler");
+const presenceHandler = require("./socket/presenceHandler");
 
 
 // Import admin seeder
@@ -99,6 +100,7 @@ io.on("connection", (socket) => {
 
   socket.join(socket.user._id.toString());
 
+  presenceHandler(socket, io);
   chatHandler(socket, io);
   marketHandler(socket, io);
 

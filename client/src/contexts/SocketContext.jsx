@@ -112,7 +112,7 @@ export const SocketProvider = ({ children }) => {
 
       newSocket.on('connect', () => {
         setIsConnected(true);
-        newSocket.emit('join-user', user.id);
+        newSocket.emit('join-user', user._id || user.id);
       });
 
       newSocket.on('disconnect', () => {

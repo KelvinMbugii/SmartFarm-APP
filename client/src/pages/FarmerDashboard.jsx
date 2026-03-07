@@ -1,22 +1,7 @@
-import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Sprout,
@@ -24,152 +9,89 @@ import {
   BookOpen,
   TrendingUp,
   Package,
-  Plus,
-  Pencil,
-  Trash2,
-  X,
   ShoppingCart,
+  Bell,
+  Store,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import ConsultationRoom from "@/components/ConsultationRoom";
-import marketplaceApi, { MARKETPLACE_CATEGORIES } from "@/services/MarketplaceService";
+import marketplaceApi from "@/services/MarketplaceService";
 import { toast } from "sonner";
 
-const formatMoney = (n) =>
-  new Intl.NumberFormat("en-KE", {
-    style: "currency",
-    currency: "KES",
-    minimumFractionDigits: 0,
-  }).format(n || 0);
-
-const PRODUCE_CATEGORIES = ["maize", "vegetables", "fruits", "milk", "other"];
+const MOCK_MY_LISTINGS = [
+  { _id: "m1", name: "Fresh Tomatoes", stockQuantity: 50, isOutOfStock: false },
+  { _id: "m2", name: "Dry Maize", stockQuantity: 0, isOutOfStock: true },
+  { _id: "m3", name: "Fresh Milk", stockQuantity: 30, isOutOfStock: false },
+];
 
 export default function FarmerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
   const [showConsultation, setShowConsultation] = useState(false);
-  const [myProducts, setMyProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [productModal, setProductModal] = useState(null);
-  const [productForm, setProductForm] = useState({
-    name: "",
-    category: "",
-    description: "",
-    price: "",
-    stockQuantity: "",
-    unit: "kg",
-    location: "",
-    isOutOfStock: false,
-    images: [],
-  });
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [useMock, setUseMock] = useState(false);
+  const [myListings, setMyListings] = useState([]);
 
   useEffect(() => {
     const run = async () => {
-      if (user?.role !== "farmer") return;
-      setLoading(true);
+      if (String(user?.role || "").toLowerCase() !== "farmer") return;
+      setLoadingListings(true);
       try {
         const { data } = await marketplaceApi.getMyProducts();
-        setMyProducts(data);
+        setMyListings(Array.isArray(data) ? data : []);
+        setUseMock(false);
       } catch (e) {
-        console.error(e);
-        toast.error("Failed to load your produce listings");
+        setMyListings(MOCK_MY_LISTINGS);
+        setUseMock(true);
+        toast.message("Using mock listings (debugging)");
       } finally {
-        setLoading(false);
+        setLoadingListings(false);
       }
     };
     run();
   }, [user?.role]);
 
-  const openAddProduce = () => {
-    setProductForm({
-      name: "",
-      category: "",
-      description: "",
-      price: "",
-      stockQuantity: "",
-      unit: "kg",
-      location: user?.location || "",
-      isOutOfStock: false,
-      images: [],
-    });
-    setProductModal("add");
-  };
-
-  const openEditProduce = (p) => {
-    setProductForm({
-      name: p.name,
-      category: p.category,
-      description: p.description || "",
-      price: p.price,
-      stockQuantity: p.stockQuantity,
-      unit: p.unit || "kg",
-      location: p.location || user?.location || "",
-      isOutOfStock: !!p.isOutOfStock,
-      images: p.images || [],
-    });
-    setProductModal(p._id);
-  };
-
-  const saveProduce = async () => {
-    const payload = {
-      name: productForm.name.trim(),
-      category: productForm.category,
-      description: productForm.description.trim(),
-      price: Number(productForm.price) || 0,
-      stockQuantity: Math.max(0, Number(productForm.stockQuantity) || 0),
-      unit: productForm.unit.trim() || "kg",
-      location: productForm.location.trim() || user?.location,
-      isOutOfStock: !!productForm.isOutOfStock,
-      images: Array.isArray(productForm.images) ? productForm.images : [],
-    };
-    if (!payload.name || !payload.category || !payload.location) {
-      toast.error("Name, category and location are required");
-      return;
-    }
-    try {
-      if (productModal === "add") {
-        await marketplaceApi.createProduct(payload);
-        toast.success("Produce listing added to marketplace");
-      } else {
-        await marketplaceApi.updateProduct(productModal, payload);
-        toast.success("Listing updated");
-      }
-      setProductModal(null);
-      const { data } = await marketplaceApi.getMyProducts();
-      setMyProducts(data);
-    } catch (e) {
-      toast.error(e.response?.data?.error || "Failed to save");
-    }
-  };
-
-  const deleteProduce = async (id) => {
-    if (!confirm("Remove this listing from the marketplace?")) return;
-    try {
-      await marketplaceApi.deleteProduct(id);
-      toast.success("Listing removed");
-      setProductModal(null);
-      setMyProducts((prev) => prev.filter((p) => p._id !== id));
-    } catch (e) {
-      toast.error(e.response?.data?.error || "Failed to delete");
-    }
-  };
-
-  const displayName = user?.name || "Farmer";
+  const listingStats = useMemo(() => {
+    const total = myListings.length;
+    const active = myListings.filter((p) => !p.isOutOfStock && Number(p.stockQuantity) > 0)
+      .length;
+    const sold = total - active;
+    return { total, active, sold };
+  }, [myListings]);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-foreground mb-2">
-          Farmer Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Welcome back, {displayName}! Manage your farming activities and sell your produce.
-        </p>
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold text-foreground mb-2">
+            Farmer Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Welcome back, {user?.name || "Farmer"}! Manage your farm activities
+            and sell produce.
+          </p>
+          {useMock && (
+            <Badge variant="secondary" className="mt-2">
+              Using mock data for easy debugging
+            </Badge>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => navigate("/notifications")} className="gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </Button>
+          <Button onClick={() => navigate("/sell-produce")} className="gap-2">
+            <Store className="h-4 w-4" />
+            Sell Produce
+          </Button>
+        </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Crops</CardTitle>
@@ -196,8 +118,12 @@ export default function FarmerDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{myProducts.length}</div>
-            <p className="text-xs text-muted-foreground">In marketplace</p>
+            <div className="text-2xl font-bold">
+              {loadingListings ? "—" : listingStats.total}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loadingListings ? "Loading..." : `${listingStats.active} active, ${listingStats.sold} sold`}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -212,70 +138,60 @@ export default function FarmerDashboard() {
         </Card>
       </div>
 
-      {/* Sell Produce Section */}
-      <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+      {/* Produce management CTA */}
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <CardTitle>Sell Produce</CardTitle>
             <CardDescription>
-              List your maize, vegetables, fruits, milk, or other produce in the marketplace. Buyers can order directly.
+              Upload photos, add descriptions, mark as sold, and manage your
+              listings in a dedicated page.
             </CardDescription>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/marketplace")}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => navigate("/marketplace")} className="gap-2">
+              <ShoppingCart className="h-4 w-4" />
               Browse Marketplace
             </Button>
-            <Button onClick={openAddProduce} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Listing
+            <Button onClick={() => navigate("/sell-produce")} className="gap-2">
+              <Store className="h-4 w-4" />
+              Manage Listings
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p className="text-muted-foreground py-4">Loading your listings...</p>
-          ) : myProducts.length === 0 ? (
-            <p className="text-muted-foreground py-4">
-              You have no produce listings yet. Add your first listing to sell in the marketplace.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {myProducts.map((p) => (
-                <div
-                  key={p._id}
-                  className="flex items-center justify-between p-3 border border-border rounded-lg"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate">{p.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatMoney(p.price)} / {p.unit} · Stock: {p.stockQuantity}
-                      {p.isOutOfStock && (
-                        <Badge variant="secondary" className="ml-2">Out of stock</Badge>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => openEditProduce(p)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => deleteProduce(p._id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Active listings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-2xl font-bold">
+                {loadingListings ? "—" : listingStats.active}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Sold / Out of stock
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-2xl font-bold">
+                {loadingListings ? "—" : listingStats.sold}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Quick tip
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground">
+                Add clear photos + quality notes to increase buyer trust.
+              </CardContent>
+            </Card>
+          </div>
         </CardContent>
       </Card>
 
@@ -296,127 +212,18 @@ export default function FarmerDashboard() {
           </Button>
           <Button variant="outline" onClick={() => navigate("/knowledge")} className="gap-2">
             <BookOpen className="h-4 w-4" />
-            View Resources
+            Knowledge Base
           </Button>
-          <Button variant="outline" onClick={openAddProduce} className="gap-2">
-            <Sprout className="h-4 w-4" />
+          <Button variant="outline" onClick={() => navigate("/sell-produce")} className="gap-2">
+            <Store className="h-4 w-4" />
             Sell Produce
           </Button>
-          <Button variant="outline" onClick={() => navigate("/marketplace")} className="gap-2">
+          <Button variant="outline" onClick={() => navigate("/my-orders")} className="gap-2">
             <ShoppingCart className="h-4 w-4" />
-            Browse Marketplace
+            My Orders
           </Button>
         </CardContent>
       </Card>
-
-      {/* Add/Edit Produce Modal */}
-      {productModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{productModal === "add" ? "Sell Produce" : "Edit Listing"}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setProductModal(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Product name</Label>
-                <Input
-                  value={productForm.name}
-                  onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Fresh Maize, Tomatoes, Milk"
-                />
-              </div>
-              <div>
-                <Label>Category</Label>
-                <Select
-                  value={productForm.category}
-                  onValueChange={(v) => setProductForm((f) => ({ ...f, category: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRODUCE_CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c.replace(/_/g, " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea
-                  value={productForm.description}
-                  onChange={(e) => setProductForm((f) => ({ ...f, description: e.target.value }))}
-                  placeholder="Brief description"
-                  rows={2}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Price (KES)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={productForm.price}
-                    onChange={(e) => setProductForm((f) => ({ ...f, price: e.target.value }))}
-                  />
-                </div>
-                <div>
-                  <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={productForm.stockQuantity}
-                    onChange={(e) =>
-                      setProductForm((f) => ({ ...f, stockQuantity: e.target.value }))
-                    }
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Unit</Label>
-                  <Input
-                    value={productForm.unit}
-                    onChange={(e) => setProductForm((f) => ({ ...f, unit: e.target.value }))}
-                    placeholder="kg, litre, crate"
-                  />
-                </div>
-                <div>
-                  <Label>Location</Label>
-                  <Input
-                    value={productForm.location}
-                    onChange={(e) => setProductForm((f) => ({ ...f, location: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="out"
-                  checked={productForm.isOutOfStock}
-                  onChange={(e) =>
-                    setProductForm((f) => ({ ...f, isOutOfStock: e.target.checked }))
-                  }
-                />
-                <Label htmlFor="out">Mark as out of stock</Label>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={saveProduce} className="flex-1">
-                  {productModal === "add" ? "Add Listing" : "Save Changes"}
-                </Button>
-                <Button variant="outline" onClick={() => setProductModal(null)}>
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {showConsultation && (
         <ConsultationRoom
@@ -427,3 +234,4 @@ export default function FarmerDashboard() {
     </div>
   );
 }
+
