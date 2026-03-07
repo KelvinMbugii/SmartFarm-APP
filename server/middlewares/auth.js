@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/user");
 
 // Protect routes - verify JWT token
 const protect = async (req, res, next) => {
@@ -43,6 +43,7 @@ const protect = async (req, res, next) => {
     }
 
     req.user = user;
+    req.user.userId = req.user._id;
     next();
   } catch (error) {
     console.error("Auth error:", error);

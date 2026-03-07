@@ -9,6 +9,8 @@ import {
   LogOut,
   CloudSun,
   ShoppingCart,
+  BarChart3,
+  Package,
   Users,
   User,
   HelpCircle,
@@ -20,11 +22,27 @@ const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
 
+  const roleHomePath = (role) => {
+    switch (String(role || "").toLowerCase()) {
+      case "farmer":
+        return "/farmer-dashboard";
+      case "agripreneur":
+        return "/agripreneur-dashboard";
+      case "officer":
+        return "/officer-dashboard";
+      case "admin":
+        return "/IT-dashboard";
+      default:
+        return "/dashboard";
+    }
+  };
+
   const sections = [
     {
       title: "Main",
       links: [
-        { name: "Dashboard", icon: Home, href: "/dashboard" },
+        { name: "Dashboard", icon: Home, href: roleHomePath(user?.role) },
+        { name: "AI Assistant", icon: BarChart3, href: "/analytics" },
         { name: "Knowledge Base", icon: BookOpen, href: "/knowledge" },
         { name: "Consultations", icon: Calendar, href: "/consultations" },
         { name: "Chat", icon: MessageCircle, href: "/chat" },
@@ -35,6 +53,7 @@ const Sidebar = () => {
       title: "Community",
       links: [
         { name: "Marketplace", icon: ShoppingCart, href: "/marketplace" },
+        { name: "My Orders", icon: Package, href: "/my-orders" },
         { name: "Market Prices", icon: TrendingUp, href: "/market" },
         { name: "Forums", icon: Users, href: "/forums" },
       ],

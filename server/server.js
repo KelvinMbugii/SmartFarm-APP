@@ -18,6 +18,8 @@ const productRoutes = require("./routes/product");
 const knowledgeRoutes = require("./routes/knowledge");
 const consultationRoutes = require("./routes/consultation");
 const forumRoutes = require("./routes/forum");
+const marketplaceRoutes = require("./routes/marketplace");
+const aiRoutes = require("./routes/ai");
 
 // Import socket handlers
 const chatHandler = require("./socket/chatHandler");
@@ -120,6 +122,8 @@ app.use("/api/product", productRoutes);
 app.use("/api/knowledge", knowledgeRoutes);
 app.use("/api/consultation", consultationRoutes);
 app.use("/api/forum", forumRoutes);
+app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/ai", aiRoutes);
 
 // Gracefully shutdown
 process.on("SIGINT", async () => {

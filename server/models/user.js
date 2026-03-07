@@ -20,13 +20,17 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['farmer', 'officer','agripreneur', 'admin'],
+        enum: ['farmer', 'agripreneur','officer', 'admin'],
         default: 'farmer',
         required: true
     },
     location: {
         type: String,
         required: true
+    },
+    Phone: {
+        type: String,
+        required: true,
     },
     avatar: {
         type: String,
@@ -47,10 +51,11 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    mpesaPhone: { type: String, trim: true },
 } ,{
     timestamps: true
 });
-       
+
 // Hash the password
 userSchema.pre('save', async function(next) {
     if (!this.isModified('password')) return next();
@@ -62,7 +67,7 @@ userSchema.pre('save', async function(next) {
     } catch (error){
         next(error);
     }
-    
+
 });
 
 // Compare the passwords
@@ -70,6 +75,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-
 const User = mongoose.models.User || mongoose.model("User", userSchema);
 module.exports = User;
+

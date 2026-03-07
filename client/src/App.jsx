@@ -26,6 +26,8 @@ import Profile from "./pages/Profile";
 import Knowledge from "./pages/Knowledge";
 import Consultations from "./pages/Consultations";
 import Forums from "./pages/Forums";
+import MyOrders from "./pages/MyOrders";
+import Analytics from "./pages/Analytics";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -59,15 +61,45 @@ function App() {
                   }
                 >
                   <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="agripreneur-dashboard" element={<AgripreneurDashboard />} />
-                  <Route path="farmer-dashboard" element={<FarmerDashboard />} />
-                  <Route path="officer-dashboard" element={<OfficerDashboard/>}/>
-                  <Route path="IT-dashboard" element={<ITDashboard/>}/>
+                  <Route
+                    path="agripreneur-dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={["agripreneur"]}>
+                        <AgripreneurDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="farmer-dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={["farmer"]}>
+                        <FarmerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="officer-dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={["officer"]}>
+                        <OfficerDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="IT-dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin"]}>
+                        <ITDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route path="knowledge" element={<Knowledge />} />
                   <Route path="consultations" element={<Consultations />} />
                   <Route path="chat" element={<Chat />} />
                   <Route path="market" element={<Market />} />
-                  <Route path="MarketPlace" element={<Marketplace/>}/>
+                  <Route path="marketplace" element={<Marketplace/>}/>
+                  <Route path="my-orders" element={<MyOrders />} />
+                  <Route path="analytics" element={<Analytics />} />
                   <Route path="forums" element={<Forums />} />
                   <Route path="weather" element={<Weather />} />
                   <Route path="profile" element={<Profile />} />

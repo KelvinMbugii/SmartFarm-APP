@@ -33,6 +33,21 @@ const Login = () => {
 
   const { login, user, loading } = useAuth();
 
+  const roleHomePath = (role) => {
+    switch (String(role || "").toLowerCase()) {
+      case "farmer":
+        return "/farmer-dashboard";
+      case "agripreneur":
+        return "/agripreneur-dashboard";
+      case "officer":
+        return "/officer-dashboard";
+      case "admin":
+        return "/IT-dashboard";
+      default:
+        return "/dashboard";
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-agricultural-50 to-agricultural-100">
@@ -42,7 +57,7 @@ const Login = () => {
   }
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={roleHomePath(user?.role)} replace />;
   }
 
   const handleSubmit = async (e) => {

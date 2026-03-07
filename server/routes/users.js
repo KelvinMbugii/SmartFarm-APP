@@ -44,14 +44,20 @@ router.get('/:id', protect, async (req, res) => {
     }
 });
 
-// Update user profile
-router.put('/profile', protect, authorizeRoles('farmer', 'officer'), async (req, res) => {
+// Update user profile (farmers, agripreneurs, officers, admin)
+router.put('/profile', protect, authorizeRoles('farmer', 'agripreneur', 'officer', 'admin'), async (req, res) => {
     try {
-        const updates = req.body;
+        const updates = { ...req.body };
         delete updates.password;
+        delete updates.email;
+        if (updates.phone !== undefined) updates.Phone = updates.phone;
+        delete updates.phone;
+        if (Object.prototype.hasOwnProperty.call(updates, 'mpesaPhone')) {
+            updates.mpesaPhone = updates.mpesaPhone ? String(updates.mpesaPhone).trim() : undefined;
+        }
 
         const user = await User.findByIdAndUpdate(
-            req.user.userId,
+            req.user._id,
             updates,
             { new: true }
         ).select('-password');

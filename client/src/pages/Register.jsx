@@ -28,8 +28,23 @@ const Register = () => {
 
   const { registerUser, user } = useAuth();
 
+  const roleHomePath = (role) => {
+    switch (String(role || "").toLowerCase()) {
+      case "farmer":
+        return "/farmer-dashboard";
+      case "agripreneur":
+        return "/agripreneur-dashboard";
+      case "officer":
+        return "/officer-dashboard";
+      case "admin":
+        return "/IT-dashboard";
+      default:
+        return "/dashboard";
+    }
+  };
+
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={roleHomePath(user?.role)} replace />;
   }
 
   const isFormValid = () => {
@@ -95,7 +110,7 @@ const Register = () => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        role: formData.role,
+        role: formData.role.trim().toLowerCase(),
         location: formData.location.trim(),
         phone: formData.phone.trim(),
         farmDetails,
@@ -103,11 +118,9 @@ const Register = () => {
 
       await registerUser(userData);
       setError("");
-      toast.success("Account created successfully!");
     } catch (error) {
       console.error("Registration error:", error);
       setError(error?.response?.data?.error || "Registration failed");
-      toast.error(error?.response?.data?.error || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -207,15 +220,18 @@ const Register = () => {
                   autoComplete="new-password"
                   className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
                 />
-                <button 
-                type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-agricultural-500 hover:text-agricultural-700" 
-                aria-label={showPassword ? "Hide Password": "Show password"}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-agricultural-500 hover:text-agricultural-700"
+                  aria-label={showPassword ? "Hide Password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5"/> : <Eye className="h-5 w-5"/>}
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
-                
               </div>
             </div>
 
@@ -237,8 +253,8 @@ const Register = () => {
               >
                 <option value="">Select Role</option>
                 <option value="farmer">Farmer</option>
-                <option value="officer">Agricultural Officer</option>
                 <option value="agripreneur">Agripreneur</option>
+                <option value="officer">Agricultural Officer</option>
               </select>
             </div>
 
@@ -284,7 +300,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   required
-                  pattern="^\+?[0-9 ()\-]{7,}$"
+                  pattern="^\+?[- 0-9 ()]{7,}$"
                   title="Please enter a valid phone number"
                   autoComplete="tel"
                   className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"

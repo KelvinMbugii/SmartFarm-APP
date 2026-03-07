@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import api from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,50 +9,58 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Edit, Save, MapPin, Phone, Mail, Calendar } from "lucide-react";
+import { User, Edit, Save, MapPin, Phone, Mail, CreditCard } from "lucide-react";
 
 const Profile = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    location: user?.location || "",
-    farmSize: user?.farmDetails?.farmSize || "",
-    crops: user?.farmDetails?.crops?.join(", ") || "",
-    equipment: user?.farmDetails?.equipment?.join(", ") || "",
+    name: "",
+    email: "",
+    phone: "",
+    mpesaPhone: "",
+    location: "",
+    farmSize: "",
+    crops: "",
+    equipment: "",
   });
+
+  useEffect(() => {
+    setFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone ?? user?.Phone ?? "",
+      mpesaPhone: user?.mpesaPhone ?? "",
+      location: user?.location || "",
+      farmSize: user?.farmDetails?.farmSize || "",
+      crops: user?.farmDetails?.crops?.join(", ") || "",
+      equipment: user?.farmDetails?.equipment?.join(", ") || "",
+    });
+  }, [user]);
 
   const handleSave = async () => {
     try {
-      const response = await fetch("/api/users/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone,
-          location: formData.location,
-          farmDetails:
-            user?.role === "farmer"
-              ? {
-                  farmSize: formData.farmSize,
-                  crops: formData.crops.split(",").map((crop) => crop.trim()),
-                  equipment: formData.equipment
-                    .split(",")
-                    .map((eq) => eq.trim()),
-                }
-              : undefined,
-        }),
+      await api.put("/api/users/profile", {
+        name: formData.name,
+        phone: formData.phone,
+        mpesaPhone: formData.mpesaPhone || undefined,
+        location: formData.location,
+        farmDetails:
+          user?.role === "farmer"
+            ? {
+                farmSize: formData.farmSize,
+                crops: formData.crops.split(",").map((c) => c.trim()),
+                equipment: formData.equipment.split(",").map((e) => e.trim()),
+              }
+            : undefined,
       });
-
-      if (response.ok) {
-        setIsEditing(false);
-        // Update user context here
-      }
+      setIsEditing(false);
+      const { data } = await api.get("/api/auth/me");
+      setFormData((prev) => ({
+        ...prev,
+        mpesaPhone: data?.mpesaPhone ?? prev.mpesaPhone,
+        phone: data?.Phone ?? data?.phone ?? prev.phone,
+      }));
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -168,6 +177,21 @@ const Profile = () => {
                     disabled={!isEditing}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mpesaPhone">M-Pesa phone number</Label>
+                  <Input
+                    id="mpesaPhone"
+                    name="mpesaPhone"
+                    value={formData.mpesaPhone}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                    placeholder="e.g. 254712345678"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used for receiving payments when you sell, or paying for orders. Optional.
+                  </p>
+                </div>
               </div>
 
               <div className="pt-4 border-t">
@@ -179,8 +203,14 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{user?.phone}</span>
+                    <span className="text-sm">{user?.phone ?? user?.Phone}</span>
                   </div>
+                  {(user?.mpesaPhone || formData.mpesaPhone) && (
+                    <div className="flex items-center space-x-3">
+                      <CreditCard className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm">M-Pesa: {formData.mpesaPhone || user?.mpesaPhone}</span>
+                    </div>
+                  )}
                   <div className="flex items-center space-x-3">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm">{user?.location}</span>

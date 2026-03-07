@@ -1,187 +1,343 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, ShoppingCart, Phone, MapPin, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import marketplaceApi, { MARKETPLACE_CATEGORIES } from "@/services/MarketplaceService";
+import { toast } from "sonner";
 
-const Marketplace = () => {
-  const [equipment, setEquipment] = useState([]);
+const formatMoney = (n) =>
+  new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency: "KES",
+    minimumFractionDigits: 0,
+  }).format(n || 0);
+
+export default function Marketplace() {
+  const { user } = useAuth();
+  const [products, setProducts] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedCondition, setSelectedCondition] = useState("");
-  const [priceRange, setPriceRange] = useState({ min: "", max: "" });
-  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [sellerType, setSellerType] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [page, setPage] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [orderQuantity, setOrderQuantity] = useState(1);
+  const [placing, setPlacing] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [lastPlacedOrderId, setLastPlacedOrderId] = useState(null);
 
-  const categories = [
-    "tractors",
-    "harvesters",
-    "irrigation",
-    "tools",
-    "seeds",
-    "fertilizers",
-    "pesticides",
-  ];
-
-  useEffect(() => {
-    fetchEquipment();
-  }, [
-    currentPage,
-    searchTerm,
-    selectedCategory,
-    selectedCondition,
-    priceRange,
-  ]);
-
-  const fetchEquipment = async () => {
+  const fetchProducts = async () => {
+    setLoading(true);
     try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: "12",
-      });
-
-      if (searchTerm) params.append("search", searchTerm);
-      if (selectedCategory) params.append("category", selectedCategory);
-      if (selectedCondition) params.append("condition", selectedCondition);
-      if (priceRange.min) params.append("minPrice", priceRange.min);
-      if (priceRange.max) params.append("maxPrice", priceRange.max);
-
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/product?${params.toString()}`,
-        {
-          headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      setEquipment(data.products || []);
-    } catch (error) {
-      console.error("Error fetching equipment:", error);
-      // fallback data
-      setEquipment([
-        {
-          id: "1",
-          name: "John Deere 5055E Tractor",
-          description:
-            "Reliable 4WD tractor perfect for small to medium farms.",
-          category: "tractors",
-          price: 25000,
-          condition: "used",
-          seller: { name: "Farm Supply Co.", location: "California, USA" },
-          images: [
-            "https://images.pexels.com/photos/2132250/pexels-photo-2132250.jpeg",
-          ],
-        },
-      ]);
+      const params = { page, limit: 24 };
+      if (search) params.search = search;
+      if (category) params.category = category;
+      if (sellerType) params.sellerType = sellerType;
+      if (minPrice) params.minPrice = minPrice;
+      if (maxPrice) params.maxPrice = maxPrice;
+      const { data } = await marketplaceApi.getProducts(params);
+      setProducts(data.products || []);
+      setTotal(data.total ?? 0);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to load products");
+      setProducts([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getConditionColor = (condition) => {
-    switch (condition) {
-      case "new":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "used":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
-      case "refurbished":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+  useEffect(() => {
+    fetchProducts();
+  }, [page, category, sellerType]);
+
+  const handleSearch = (e) => {
+    e?.preventDefault();
+    setPage(1);
+    fetchProducts();
+  };
+
+  const placeOrder = async () => {
+    if (!selectedProduct || !user) {
+      toast.error("Please log in to place an order");
+      return;
+    }
+    const qty = Math.max(1, parseInt(orderQuantity, 10) || 1);
+    if (selectedProduct.stockQuantity < qty) {
+      toast.error(`Only ${selectedProduct.stockQuantity} ${selectedProduct.unit} available`);
+      return;
+    }
+    setPlacing(true);
+    try {
+      const { data } = await marketplaceApi.placeOrder({
+        items: [{ productId: selectedProduct._id, quantity: qty }],
+        shippingAddress: "",
+      });
+      setLastPlacedOrderId(data._id);
+      toast.success("Order placed. Seller will be notified. You can pay via M-Pesa below.");
+      setOrderQuantity(1);
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Failed to place order");
+    } finally {
+      setPlacing(false);
     }
   };
 
-  const formatPrice = (price) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(price);
+  const initiateMpesa = async (orderId) => {
+    const id = orderId || lastPlacedOrderId;
+    if (!id || !user) {
+      toast.info("Place the order first, then click Pay with M-Pesa.");
+      return;
+    }
+    setPaying(true);
+    try {
+      await marketplaceApi.initiatePayment(id, true);
+      toast.success("Payment confirmed");
+      setLastPlacedOrderId(null);
+    } catch (e) {
+      toast.error(e.response?.data?.error || "Payment failed");
+    } finally {
+      setPaying(false);
+    }
+  };
 
- 
+  const totalPages = Math.ceil(total / 24);
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Marketplace</h1>
+      <h1 className="text-2xl font-semibold mb-4 text-foreground">Marketplace</h1>
+      <p className="text-muted-foreground mb-6">
+        Buy farm inputs from agripreneurs or produce from farmers. One place for all agricultural trade.
+      </p>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <Search className="text-gray-500" />
+      <form onSubmit={handleSearch} className="flex flex-wrap gap-4 mb-6">
+        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+          <Search className="h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search equipment..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-64"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-xs"
           />
         </div>
-
-        <Select onValueChange={setSelectedCategory}>
+        <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
+            {MARKETPLACE_CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c.replace(/_/g, " ")}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-
-        <Select onValueChange={setSelectedCondition}>
+        <Select value={sellerType} onValueChange={(v) => { setSellerType(v); setPage(1); }}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Condition" />
+            <SelectValue placeholder="Seller type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="used">Used</SelectItem>
-            <SelectItem value="refurbished">Refurbished</SelectItem>
+            <SelectItem value="agripreneur">Agripreneur</SelectItem>
+            <SelectItem value="farmer">Farmer</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+        <Input
+          type="number"
+          placeholder="Min price"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          className="w-28"
+        />
+        <Input
+          type="number"
+          placeholder="Max price"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          className="w-28"
+        />
+        <Button type="submit">Search</Button>
+      </form>
 
-      {/* Equipment List */}
       {loading ? (
-        <p>Loading equipment...</p>
+        <p className="text-muted-foreground py-8">Loading products...</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {equipment.map((item) => (
-            <Card key={item._id || item.id}>
-              <CardHeader>
-                <CardTitle>{item.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((item) => (
+              <Card
+                key={item._id}
+                className="cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => {
+                  setSelectedProduct(item);
+                  setOrderQuantity(1);
+                }}
+              >
+                <CardHeader className="p-0">
+                  <div className="aspect-[4/3] bg-muted rounded-t-xl overflow-hidden">
+                    <img
+                      src={item.images?.[0] || "https://via.placeholder.com/300x200?text=No+Image"}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <CardTitle className="text-base truncate">{item.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground truncate mt-1">
+                    {item.description || "—"}
+                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="font-semibold text-primary">
+                      {formatMoney(item.price)}
+                    </span>
+                    <Badge variant="secondary">{item.sellerType}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {item.stockQuantity} {item.unit} · {item.location}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Seller: {item.seller?.name || "—"}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </Button>
+              <span className="flex items-center px-4 text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Product detail & order modal */}
+      {selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>{selectedProduct.name}</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { setSelectedProduct(null); setLastPlacedOrderId(null); }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img
-                  src={item.images?.[0] || "https://via.placeholder.com/300x200?text=No+Image"}
-                  alt={item.name}
-                  className="w-full h-40 object-cover rounded"
+                  src={
+                    selectedProduct.images?.[0] ||
+                    "https://via.placeholder.com/600x340?text=No+Image"
+                  }
+                  alt={selectedProduct.name}
+                  className="w-full h-full object-cover"
                 />
-                <p className="text-sm mt-2">{item.description}</p>
-                <Badge className={`${getConditionColor(item.condition)} mt-2`}>
-                  {item.condition}
-                </Badge>
-                <p className="mt-2 font-semibold">{formatPrice(item.price)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Seller: {item.seller?.name || "Unknown"}
+              </div>
+              <p className="text-muted-foreground">{selectedProduct.description || "No description."}</p>
+              <div className="flex justify-between">
+                <span className="text-lg font-semibold text-primary">
+                  {formatMoney(selectedProduct.price)} / {selectedProduct.unit}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  Available: {selectedProduct.stockQuantity} {selectedProduct.unit}
+                </span>
+              </div>
+              <div className="border-t pt-4 space-y-2">
+                <p className="font-medium">Seller</p>
+                <p>{selectedProduct.seller?.name || "—"}</p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {selectedProduct.location}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4" />
+                  <span>{selectedProduct.seller?.Phone || "Contact via platform"}</span>
+                </div>
+              </div>
+              {user && (
+                <div className="space-y-2 border-t pt-4">
+                  <Label>Quantity</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={selectedProduct.stockQuantity}
+                    value={orderQuantity}
+                    onChange={(e) => setOrderQuantity(e.target.value)}
+                  />
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <Button
+                        className="flex-1 gap-2"
+                        onClick={placeOrder}
+                        disabled={placing}
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        {placing ? "Placing..." : "Place Order"}
+                      </Button>
+                      {lastPlacedOrderId && (
+                        <Button
+                          variant="outline"
+                          onClick={() => initiateMpesa(lastPlacedOrderId)}
+                          disabled={paying}
+                        >
+                          {paying ? "Processing..." : "Pay with M-Pesa"}
+                        </Button>
+                      )}
+                    </div>
+                    {lastPlacedOrderId && (
+                      <p className="text-xs text-green-600 dark:text-green-400">
+                        Order placed. Click &quot;Pay with M-Pesa&quot; to confirm payment (demo: marks as paid).
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Add your M-Pesa number in Profile for payments.
+                    </p>
+                  </div>
+                </div>
+              )}
+              {!user && (
+                <p className="text-sm text-muted-foreground border-t pt-4">
+                  Log in to place an order.
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  Location: {item.location || "Not specified"}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
   );
-};
-
-export default Marketplace;
+}
