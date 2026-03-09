@@ -23,6 +23,21 @@ class KnowledgeService {
     }
   }
 
+
+  async uploadArticleImage(file) {
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await api.post(`${API_BASE_URL}/api/knowledge/upload-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading article image:', error);
+      throw error;
+    }
+  }
+
   async createArticle(articleData) {
     try {
       const response = await api.post(`${API_BASE_URL}/api/knowledge`, articleData);
@@ -75,4 +90,3 @@ class KnowledgeService {
 }
 
 export default new KnowledgeService();
-

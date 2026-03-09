@@ -151,7 +151,7 @@ const Sidebar = () => {
           {
             name: "Availability & Settings",
             icon: User,
-            href: "/profile",
+            href: "/officer-settings",
           },
         ],
       },

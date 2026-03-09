@@ -22,7 +22,9 @@ import {
   CheckCircle,
   Calendar,
   User,
-  TrendingUp
+  TrendingUp,
+  Flag,
+  ShieldCheck
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import forumService from "@/services/ForumService";
@@ -47,10 +49,20 @@ const Forums = () => {
     tags: ""
   });
 
+  const [moderationQueue, setModerationQueue] = useState([]);
+
   useEffect(() => {
     fetchPosts();
     fetchCategories();
   }, [selectedCategory, searchTerm, sortBy]);
+
+  useEffect(() => {
+    if (!['officer', 'admin'].includes(user?.role)) return;
+    forumService
+      .getReports('open')
+      .then((data) => setModerationQueue(data || []))
+      .catch(() => setModerationQueue([]));
+  }, [user?.role]);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -83,7 +95,7 @@ const Forums = () => {
     try {
       const post = await forumService.getPost(id);
       setSelectedPost(post);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load post");
     }
   };
@@ -113,7 +125,7 @@ const Forums = () => {
       if (selectedPost?._id === postId) {
         handleViewPost(postId);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to like post");
     }
   };
@@ -126,7 +138,7 @@ const Forums = () => {
       setCommentContent("");
       handleViewPost(selectedPost._id);
       fetchPosts();
-    } catch (error) {
+    } catch {
       toast.error("Failed to add comment");
     }
   };
@@ -136,7 +148,7 @@ const Forums = () => {
     try {
       await forumService.likeComment(selectedPost._id, commentId);
       handleViewPost(selectedPost._id);
-    } catch (error) {
+    } catch {
       toast.error("Failed to like comment");
     }
   };
@@ -148,8 +160,56 @@ const Forums = () => {
       await forumService.addReply(selectedPost._id, commentId, replyContent[commentId]);
       setReplyContent({ ...replyContent, [commentId]: "" });
       handleViewPost(selectedPost._id);
-    } catch (error) {
+    } catch {
       toast.error("Failed to add reply");
+    }
+  };
+
+  const handleTogglePin = async(postId, nextPinned) => {
+    try {
+      await forumService.pinPost(postId, nextPinned);
+      toast.success(nextPinned ? 'Post pinned' : 'Post unpinned');
+      fetchPosts();
+      if(selectedPost?._id === postId){
+        handleViewPost(postId);
+      }
+    } catch (error){
+      toast.error(error?.response?.data?.error || 'Failed to update pin status');
+    }
+  };
+
+  const handleVerifyComment = async (commentId, nextVerified ) => {
+    if (!selectedPost) return;
+    try {
+      await forumService.verifyComment(selectedPost._id, commentId, nextVerified);
+      toast.success(nextVerified ? 'Marked as verified answer' : 'Verification removed');
+      handleViewPost(selectedPost._id);
+      fetchPosts();
+    } catch(error){
+      toast.error(error?.response?.data?.error || 'Failed to verify answer');
+    }
+  };
+
+  const handleReportPost = async (postId) => {
+    const reason = window.prompt('Why are you reporting this post?');
+    if(!reason?.trim()) return;
+    try{
+      await forumService.reportPost(postId, reason.trim(), 'post');
+      toast.success('Report submitted');
+    } catch (error){
+      toast.error(error?.response?.data?.error || 'Failed to submit report');
+    }
+  };
+
+   const handleReportComment = async (commentId) => {
+    if (!selectedPost) return;
+    const reason = window.prompt('Why are you reporting this comment?');
+    if (!reason?.trim()) return;
+    try {
+      await forumService.reportPost(selectedPost._id, reason.trim(), 'comment', commentId);
+      toast.success('Comment report submitted');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to submit comment report');
     }
   };
 
@@ -163,7 +223,7 @@ const Forums = () => {
       if (selectedPost?._id === postId) {
         setSelectedPost(null);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete post");
     }
   };
@@ -254,6 +314,29 @@ const Forums = () => {
           </div>
         </CardContent>
       </Card>
+      {['officer', 'admin'].includes(user?.role) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Moderation Queue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {moderationQueue.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No open reports.</p>
+            ) : (
+              <div className="space-y-2">
+                {moderationQueue.slice(0, 5).map((entry) => (
+                  <div key={entry.report?._id} className="text-sm border rounded p-2 flex items-center justify-between">
+                    <span>
+                      <strong>{entry.postTitle}</strong> — {entry.report?.targetType} reported: {entry.report?.reason}
+                    </span>
+                    <Badge variant="outline">Open</Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Posts List */}
       <div className="space-y-4">
@@ -428,13 +511,28 @@ const Forums = () => {
                     </span>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSelectedPost(null)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  {['officer', 'admin'].includes(user?.role) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTogglePin(selectedPost._id, !selectedPost.pinned)}
+                    >
+                      <Pin className="w-4 h-4 mr-1" />
+                      {selectedPost.pinned ? 'Unpin' : 'Pin'}
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => handleReportPost(selectedPost._id)}>
+                    <Flag className="w-4 h-4 mr-1" /> Report
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSelectedPost(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -466,12 +564,17 @@ const Forums = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="font-medium text-sm">{comment.author?.name}</span>
+                              {comment.verifiedAnswer && (
+                                <Badge variant="secondary" className="text-[10px] py-0 h-5">
+                                  <ShieldCheck className="w-3 h-3 mr-1" /> Verified answer
+                                </Badge>
+                              )}
                               <span className="text-xs text-muted-foreground">
                                 {new Date(comment.createdAt).toLocaleDateString()}
                               </span>
                             </div>
                             <p className="text-sm mb-2">{comment.content}</p>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 flex-wrap">
                               <button
                                 onClick={() => handleLikeComment(comment._id)}
                                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
@@ -488,6 +591,22 @@ const Forums = () => {
                               >
                                 <Reply className="w-3 h-3" />
                                 Reply
+                              </button>
+                              {['officer', 'admin'].includes(user?.role) && (
+                                <button
+                                  onClick={() => handleVerifyComment(comment._id, !comment.verifiedAnswer)}
+                                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                                >
+                                  <ShieldCheck className="w-3 h-3" />
+                                  {comment.verifiedAnswer ? 'Unverify' : 'Verify'}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleReportComment(comment._id)}
+                                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary"
+                              >
+                                <Flag className="w-3 h-3" />
+                                Report
                               </button>
                             </div>
                             

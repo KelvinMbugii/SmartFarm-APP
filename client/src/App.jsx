@@ -32,6 +32,7 @@ import Notifications from "./pages/Notifications";
 import SellProduce from "./pages/SellProduce";
 import PaymentMethods from "./pages/PaymentMethods";
 import CustomerMessages from "./pages/CustomerMessages";
+import OfficerSettings from "./pages/OfficerSettings";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -111,6 +112,7 @@ function App() {
                   <Route path="forums" element={<Forums />} />
                   <Route path="weather" element={<Weather />} />
                   <Route path="profile" element={<Profile />} />
+                  <Route path="officer-settings" element={<ProtectedRoute allowedRoles={["officer", "admin"]}><OfficerSettings/> </ProtectedRoute>}/>
                 </Route>
               </Routes>
               <Toaster />

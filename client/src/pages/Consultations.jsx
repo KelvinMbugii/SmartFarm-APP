@@ -31,6 +31,8 @@ const Consultations = () => {
   const { user } = useAuth();
   const [consultations, setConsultations] = useState([]);
   const [officers, setOfficers] = useState([]);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedConsultation, setSelectedConsultation] = useState(null);
@@ -50,6 +52,35 @@ const Consultations = () => {
       fetchOfficers();
     }
   }, [user]);
+
+
+  useEffect(() => {
+    const shouldFetchSlots =
+      user?.role === 'farmer' &&
+      formData.officerId &&
+      formData.scheduledDate &&
+      (formData.consultationType === 'video-call' || formData.consultationType === 'in-person');
+
+    if (!shouldFetchSlots) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    const fetchSlots = async () => {
+      try {
+        setSlotsLoading(true);
+        const data = await consultationService.getOfficerSlots(formData.officerId, formData.scheduledDate);
+        setAvailableSlots((data?.slots || []).filter((slot) => slot.available));
+      } catch (error) {
+        setAvailableSlots([]);
+        toast.error(error?.response?.data?.error || 'Failed to load officer slots');
+      } finally {
+        setSlotsLoading(false);
+      }
+    };
+
+    fetchSlots();
+  }, [formData.officerId, formData.scheduledDate, formData.consultationType, user?.role]);
 
   const fetchConsultations = async () => {
     setLoading(true);
@@ -86,6 +117,7 @@ const Consultations = () => {
         scheduledDate: "",
         scheduledTime: ""
       });
+      setAvailableSlots([]);
       fetchConsultations();
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to create consultation");
@@ -96,7 +128,7 @@ const Consultations = () => {
     try {
       const consultation = await consultationService.getConsultation(id);
       setSelectedConsultation(consultation);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load consultation");
     }
   };
@@ -109,7 +141,7 @@ const Consultations = () => {
       setMessageContent("");
       handleViewConsultation(selectedConsultation._id);
       fetchConsultations();
-    } catch (error) {
+    } catch {
       toast.error("Failed to send message");
     }
   };
@@ -122,7 +154,7 @@ const Consultations = () => {
       if (selectedConsultation?._id === id) {
         handleViewConsultation(id);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to update status");
     }
   };
@@ -139,7 +171,7 @@ const Consultations = () => {
         toast.success("Feedback submitted successfully");
         handleViewConsultation(selectedConsultation._id);
         fetchConsultations();
-      } catch (error) {
+      } catch {
         toast.error("Failed to submit feedback");
       }
     }
@@ -372,11 +404,24 @@ const Consultations = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium">Scheduled Time</label>
-                    <Input
-                      type="time"
+                    <Select
                       value={formData.scheduledTime}
-                      onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-                    />
+                      onValueChange={(value) => setFormData({ ...formData, scheduledTime: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={slotsLoading ? "Loading slots..." : "Choose available time"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSlots.map((slot) => (
+                          <SelectItem key={slot.time} value={slot.time}>
+                            {slot.time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {!slotsLoading && formData.scheduledDate && availableSlots.length === 0 && (
+                      <p className="mt-2 text-xs text-muted-foreground">No available slots for the selected date.</p>
+                    )}
                   </div>
                 </>
               )}
@@ -547,4 +592,3 @@ const Consultations = () => {
 };
 
 export default Consultations;
-

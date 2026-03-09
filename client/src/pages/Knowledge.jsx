@@ -16,7 +16,8 @@ import {
   Trash2,
   X,
   Calendar,
-  User
+  User,
+  ImagePlus
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import knowledgeService from "@/services/KnowledgeService";
@@ -31,10 +32,13 @@ const Knowledge = () => {
   const [categories, setCategories] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     content: "",
     category: "general",
+    status: "published",
+    coverImageUrl: "",
     tags: ""
   });
 
@@ -74,16 +78,34 @@ const Knowledge = () => {
       const tagsArray = formData.tags.split(",").map(tag => tag.trim()).filter(tag => tag);
       const articleData = {
         ...formData,
+        status: formData.status || "published",
         tags: tagsArray
       };
       
       await knowledgeService.createArticle(articleData);
       toast.success("Article created successfully");
       setShowCreateModal(false);
-      setFormData({ title: "", content: "", category: "general", tags: "" });
+      setFormData({ title: "", content: "", category: "general", status: "published", coverImageUrl: "", tags: "" });
       fetchArticles();
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to create article");
+    }
+  };
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingImage(true);
+      const data = await knowledgeService.uploadArticleImage(file);
+      setFormData((prev) => ({ ...prev, coverImageUrl: data.url }));
+      toast.success('Cover image uploaded');
+    } catch (error) {
+      toast.error(error?.response?.data?.error || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      event.target.value = '';
     }
   };
 
@@ -91,7 +113,7 @@ const Knowledge = () => {
     try {
       await knowledgeService.likeArticle(articleId);
       fetchArticles();
-    } catch (error) {
+    } catch {
       toast.error("Failed to like article");
     }
   };
@@ -100,7 +122,7 @@ const Knowledge = () => {
     try {
       const article = await knowledgeService.getArticle(articleId);
       setSelectedArticle(article);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load article");
     }
   };
@@ -115,7 +137,7 @@ const Knowledge = () => {
       if (selectedArticle?._id === articleId) {
         setSelectedArticle(null);
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete article");
     }
   };
@@ -212,6 +234,9 @@ const Knowledge = () => {
                 {article.featured && (
                   <Badge variant="default">Featured</Badge>
                 )}
+                {article.status === "draft" && (
+                  <Badge variant="secondary">Draft</Badge>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="outline">{categoryLabels[article.category] || article.category}</Badge>
@@ -222,6 +247,13 @@ const Knowledge = () => {
               </div>
             </CardHeader>
             <CardContent>
+              {article.coverImageUrl && (
+                <img
+                  src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${article.coverImageUrl}`}
+                  alt={article.title}
+                  className="h-36 w-full object-cover rounded-md mb-3"
+                />
+              )}
               <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                 {article.content}
               </p>
@@ -310,6 +342,36 @@ const Knowledge = () => {
                 />
               </div>
               <div>
+                <label className="text-sm font-medium">Publishing Status</label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Cover Image</label>
+                <Input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleImageUpload} />
+                {uploadingImage && <p className="text-xs text-muted-foreground">Uploading image...</p>}
+                {formData.coverImageUrl && (
+                  <div className="rounded-md border p-2">
+                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1"><ImagePlus className="w-3 h-3" /> Uploaded</p>
+                    <img
+                      src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${formData.coverImageUrl}`}
+                      alt="Article cover preview"
+                      className="h-36 w-full object-cover rounded"
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
                 <label className="text-sm font-medium">Tags (comma-separated)</label>
                 <Input
                   value={formData.tags}
@@ -336,6 +398,7 @@ const Knowledge = () => {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-2xl mb-2">{selectedArticle.title}</CardTitle>
+                  {selectedArticle.status === "draft" && <Badge variant="secondary">Draft</Badge>}
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge>{categoryLabels[selectedArticle.category] || selectedArticle.category}</Badge>
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -358,6 +421,13 @@ const Knowledge = () => {
               </div>
             </CardHeader>
             <CardContent>
+              {selectedArticle.coverImageUrl && (
+                <img
+                  src={`${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}${selectedArticle.coverImageUrl}`}
+                  alt={selectedArticle.title}
+                  className="h-56 w-full object-cover rounded-md mb-4"
+                />
+              )}
               <div className="prose max-w-none mb-6">
                 <p className="whitespace-pre-wrap">{selectedArticle.content}</p>
               </div>
@@ -402,4 +472,3 @@ const Knowledge = () => {
 };
 
 export default Knowledge;
-

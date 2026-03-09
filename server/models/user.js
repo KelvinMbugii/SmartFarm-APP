@@ -1,6 +1,54 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const weeklyAvailabilitySchema = new mongoose.Schema(
+    {
+        dayOfWeek: {
+            type: Number,
+            min: 0,
+            max: 6,
+            required: true,
+        },
+        enabled: {
+            type: Boolean,
+            default: false,
+        },
+        startTime: {
+            type: String,
+            default: '08:00',
+        },
+        endTime: {
+            type: String,
+            default: '17:00',
+        },
+        slotDurationMinutes: {
+            type: Number,
+            enum: [15, 30, 45, 60],
+            default: 30,
+        },
+    },
+    { _id: false }
+);
+
+const availabilityExceptionSchema = new mongoose.Schema(
+    {
+        date: { type: Date, required: true },
+        isAvailable: { type: Boolean, default: true },
+        startTime: String,
+        endTime: String,
+        note: String,
+    },
+    { _id: false }
+);
+
+const defaultWeeklyAvailability = Array.from({ length: 7 }, (_, dayOfWeek) => ({
+    dayOfWeek,
+    enabled: false,
+    startTime: '08:00',
+    endTime: '17:00',
+    slotDurationMinutes: 30,
+}));
+
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -49,6 +97,32 @@ const userSchema = new mongoose.Schema({
         crops: [String],
         equipment: [String]
     },
+    availability: {
+        timezone: {
+            type: String,
+            default: 'Africa/Nairobi',
+        },
+        weekly: {
+            type: [weeklyAvailabilitySchema],
+            default: defaultWeeklyAvailability,
+        },
+        exceptions: {
+            type: [availabilityExceptionSchema],
+            default: [],
+        },
+    },
+    bookingBufferMinutes: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 180,
+    },
+    maxDailyBookings: {
+        type: Number,
+        default: 8,
+        min: 1,
+        max: 50,
+    },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
     mpesaPhone: { type: String, trim: true },
@@ -75,6 +149,5 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 module.exports = User;
-
