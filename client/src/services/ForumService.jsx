@@ -113,6 +113,61 @@ class ForumService {
     }
   }
 
+
+  async pinPost(id, pinned) {
+    try {
+      const response = await api.post(`${API_BASE_URL}/api/forum/${id}/pin`, { pinned });
+      return response.data;
+    } catch (error) {
+      console.error('Error pinning post:', error);
+      throw error;
+    }
+  }
+
+  async verifyComment(postId, commentId, verified) {
+    try {
+      const response = await api.post(`${API_BASE_URL}/api/forum/${postId}/comment/${commentId}/verify`, { verified });
+      return response.data;
+    } catch (error) {
+      console.error('Error verifying comment:', error);
+      throw error;
+    }
+  }
+
+  async reportPost(postId, reason, targetType = 'post', targetCommentId) {
+    try {
+      const response = await api.post(`${API_BASE_URL}/api/forum/${postId}/report`, {
+        reason,
+        targetType,
+        targetCommentId,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error reporting content:', error);
+      throw error;
+    }
+  }
+
+  async getReports(status = 'open') {
+    try {
+      const response = await api.get(`${API_BASE_URL}/api/forum/reports`, { params: { status } });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+      throw error;
+    }
+  }
+
+  async resolveReport(reportId, note = '') {
+    try {
+      const response = await api.put(`${API_BASE_URL}/api/forum/reports/${reportId}/resolve`, { note });
+      return response.data;
+    } catch (error) {
+      console.error('Error resolving report:', error);
+      throw error;
+    }
+  }
+
   async getCategories() {
     try {
       const response = await api.get(`${API_BASE_URL}/api/forum/meta/categories`);
@@ -125,4 +180,3 @@ class ForumService {
 }
 
 export default new ForumService();
-

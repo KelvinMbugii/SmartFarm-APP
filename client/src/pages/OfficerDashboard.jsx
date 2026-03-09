@@ -1,183 +1,4 @@
-// import { useState } from "react";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "../components/ui/card";
-// import { Button } from "../components/ui/button";
-// import { Users, MessageSquare, FileText, AlertCircle } from "lucide-react";
-// import { useGetActiveConsultations } from "../hooks/useQueries";
-// import ConsultationRoom from "../components/ConsultationRoom";
-
-// export default function OfficerDashboard({ userProfile }) {
-//   const [showConsultation, setShowConsultation] = useState(false);
-//   const [selectedConsultationId, setSelectedConsultationId] = useState(null);
-//   const { data: consultations = [], isLoading } = useGetActiveConsultations();
-
-//   const handleOpenConsultation = (consultationId) => {
-//     setSelectedConsultationId(consultationId);
-//     setShowConsultation(true);
-//   };
-
-//   return (
-//     <div className="container mx-auto px-4 py-8">
-//       <div className="mb-8">
-//         <h1 className="text-4xl font-bold text-foreground mb-2">
-//           Agricultural Officer Dashboard
-//         </h1>
-//         <p className="text-muted-foreground">
-//           Welcome back, {userProfile.name}! Manage consultations and support
-//           users.
-//         </p>
-//       </div>
-
-//       {/* Quick Stats */}
-//       <div className="grid md:grid-cols-4 gap-6 mb-8">
-//         <Card>
-//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//             <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-//             <Users className="h-4 w-4 text-muted-foreground" />
-//           </CardHeader>
-//           <CardContent>
-//             <div className="text-2xl font-bold">342</div>
-//             <p className="text-xs text-muted-foreground">+18 this week</p>
-//           </CardContent>
-//         </Card>
-
-//         <Card>
-//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//             <CardTitle className="text-sm font-medium">Consultations</CardTitle>
-//             <MessageSquare className="h-4 w-4 text-muted-foreground" />
-//           </CardHeader>
-//           <CardContent>
-//             <div className="text-2xl font-bold">{consultations.length}</div>
-//             <p className="text-xs text-muted-foreground">Active sessions</p>
-//           </CardContent>
-//         </Card>
-
-//         <Card>
-//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//             <CardTitle className="text-sm font-medium">Reports</CardTitle>
-//             <FileText className="h-4 w-4 text-muted-foreground" />
-//           </CardHeader>
-//           <CardContent>
-//             <div className="text-2xl font-bold">28</div>
-//             <p className="text-xs text-muted-foreground">Pending review</p>
-//           </CardContent>
-//         </Card>
-
-//         <Card>
-//           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//             <CardTitle className="text-sm font-medium">Alerts</CardTitle>
-//             <AlertCircle className="h-4 w-4 text-muted-foreground" />
-//           </CardHeader>
-//           <CardContent>
-//             <div className="text-2xl font-bold">5</div>
-//             <p className="text-xs text-muted-foreground">Require attention</p>
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Main Content */}
-//       <div className="grid lg:grid-cols-3 gap-6">
-//         {/* Active Consultations */}
-//         <Card className="lg:col-span-2">
-//           <CardHeader>
-//             <CardTitle>Active Consultations</CardTitle>
-//             <CardDescription>
-//               Manage and respond to user consultations
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             {isLoading ? (
-//               <div className="text-center py-8">
-//                 <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-//                 <p className="mt-2 text-sm text-muted-foreground">
-//                   Loading consultations...
-//                 </p>
-//               </div>
-//             ) : consultations.length === 0 ? (
-//               <div className="text-center py-8">
-//                 <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-//                 <p className="text-muted-foreground">No active consultations</p>
-//               </div>
-//             ) : (
-//               <div className="space-y-4">
-//                 {consultations.map((consultation) => (
-//                   <div
-//                     key={consultation.id}
-//                     className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors"
-//                   >
-//                     <div>
-//                       <p className="font-medium">
-//                         Consultation #{consultation.id.slice(-8)}
-//                       </p>
-//                       <p className="text-sm text-muted-foreground">
-//                         {consultation.participants.length} participant(s)
-//                       </p>
-//                     </div>
-//                     <Button
-//                       size="sm"
-//                       onClick={() => handleOpenConsultation(consultation.id)}
-//                     >
-//                       Open Chat
-//                     </Button>
-//                   </div>
-//                 ))}
-//               </div>
-//             )}
-//           </CardContent>
-//         </Card>
-
-//         {/* Quick Actions */}
-//         <Card>
-//           <CardHeader>
-//             <CardTitle>Quick Actions</CardTitle>
-//             <CardDescription>Administrative tools</CardDescription>
-//           </CardHeader>
-//           <CardContent className="space-y-3">
-//             <Button
-//               className="w-full justify-start gap-2"
-//               variant="outline"
-//               onClick={() => setShowConsultation(true)}
-//             >
-//               <MessageSquare className="h-4 w-4" />
-//               New Consultation
-//             </Button>
-//             <Button className="w-full justify-start gap-2" variant="outline">
-//               <Users className="h-4 w-4" />
-//               View All Users
-//             </Button>
-//             <Button className="w-full justify-start gap-2" variant="outline">
-//               <FileText className="h-4 w-4" />
-//               Generate Report
-//             </Button>
-//             <Button className="w-full justify-start gap-2" variant="outline">
-//               <AlertCircle className="h-4 w-4" />
-//               View Alerts
-//             </Button>
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Consultation Room Modal */}
-//       {showConsultation && (
-//         <ConsultationRoom
-//           userProfile={userProfile}
-//           consultationId={selectedConsultationId}
-//           onClose={() => {
-//             setShowConsultation(false);
-//             setSelectedConsultationId(null);
-//           }}
-//         />
-//       )}
-//     </div>
-//   );
-// }
-
-
+import React, { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -185,70 +6,224 @@ import {
   Bell,
   BookOpen,
   CalendarClock,
+  ClipboardList,
   LifeBuoy,
   Settings,
+  Star,
+  AlertTriangle,
+  Clock3,
+  CircleCheck,
+  RefreshCw,
+  ArrowUpRight,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import officerService from "@/services/OfficerService";
+import { toast } from "sonner";
 
-const officerModules = [
+const quickActions = [
   {
     title: "Consultation Management",
-    description: "Review farmer requests and manage consultation sessions.",
+    description: "Review pending and active farmer consultations.",
     href: "/consultations",
     icon: CalendarClock,
   },
   {
     title: "Availability Settings",
-    description: "Set your schedule and preferred consultation windows.",
-    href: "/profile",
+    description: "Adjust booking windows, slot sizes, and limits.",
+    href: "/officer-settings",
     icon: Settings,
   },
   {
-    title: "Articles / Knowledge Hub",
-    description: "Publish practical guidance and curated extension resources.",
+    title: "Articles & Guides",
+    description: "Publish draft or featured advisory articles.",
     href: "/knowledge",
     icon: BookOpen,
   },
   {
-    title: "Farmer Support",
-    description: "Respond to farmer questions via chat and support channels.",
+    title: "Farmer Support Chat",
+    description: "Respond quickly to farmer messages.",
     href: "/chat",
     icon: LifeBuoy,
   },
   {
-    title: "Alerts",
-    description: "Send and monitor urgent advisories for local communities.",
-    href: "/weather",
+    title: "Forum Moderation",
+    description: "Resolve reports and verify community answers.",
+    href: "/forums",
     icon: Bell,
   },
 ];
 
+const statusTone = {
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  scheduled: "bg-blue-100 text-blue-800 border-blue-200",
+  "in-progress": "bg-purple-100 text-purple-800 border-purple-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
+};
+
+const MetricCard = ({ label, value, helper, icon }) => {
+  const IconComponent = icon;
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
+          {label}
+          <IconComponent className="w-4 h-4 text-muted-foreground" />
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {helper ? <p className="text-xs text-muted-foreground mt-1">{helper}</p> : null}
+      </CardContent>
+    </Card>
+  );
+};
+
 export default function OfficerDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [summary, setSummary] = useState({
+    kpis: {
+      pendingRequests: 0,
+      activeConsultations: 0,
+      completedThisMonth: 0,
+      averageRating: 0,
+      publishedArticles: 0,
+      draftArticles: 0,
+      openReports: 0,
+    },
+    todaySchedule: [],
+  });
+
+  const loadSummary = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await officerService.getDashboardSummary();
+      setSummary(data || summary);
+    } catch (err) {
+      const msg = err?.response?.data?.error || "Failed to load dashboard summary";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const urgentItems = useMemo(() => {
+    const items = [];
+    if (summary.kpis.pendingRequests > 0) {
+      items.push(`${summary.kpis.pendingRequests} pending consultation request(s)`);
+    }
+    if (summary.kpis.openReports > 0) {
+      items.push(`${summary.kpis.openReports} open community report(s)`);
+    }
+    if (summary.kpis.draftArticles > 0) {
+      items.push(`${summary.kpis.draftArticles} draft article(s) awaiting publish`);
+    }
+    return items;
+  }, [summary]);
+
   return (
     <div className="space-y-6 p-6">
-      <div className="space-y-2">
-        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">SmartFarm Platform</Badge>
-        <h1 className="text-3xl font-bold">Agricultural Officer Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage support operations and farmer-facing advisory services.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-2">
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">SmartFarm Officer Portal</Badge>
+          <h1 className="text-3xl font-bold">Officer Dashboard</h1>
+          <p className="text-muted-foreground">Operations overview for consultations, content publishing, and community moderation.</p>
+        </div>
+        <Button variant="outline" onClick={loadSummary} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      {error ? (
+        <Card className="border-red-300">
+          <CardContent className="py-4 text-sm text-red-700">{error}</CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Pending Requests" value={summary.kpis.pendingRequests} helper="Needs officer response" icon={Clock3} />
+        <MetricCard label="Active Consultations" value={summary.kpis.activeConsultations} helper="Pending + scheduled + in-progress" icon={CalendarClock} />
+        <MetricCard label="Completed (This Month)" value={summary.kpis.completedThisMonth} helper="Closed consultations this month" icon={CircleCheck} />
+        <MetricCard label="Average Rating" value={summary.kpis.averageRating || "-"} helper="Farmer feedback quality" icon={Star} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><ClipboardList className="w-5 h-5" />Today’s Priority Queue</CardTitle>
+            <CardDescription>Consultations for today, ordered by scheduled time.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Loading schedule...</p>
+            ) : summary.todaySchedule?.length ? (
+              <div className="space-y-3">
+                {summary.todaySchedule.map((item) => (
+                  <div key={item._id} className="border rounded-md p-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{item.subject}</p>
+                      <p className="text-xs text-muted-foreground">Farmer: {item.farmer?.name || "Unknown"}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{item.scheduledTime || "--:--"}</p>
+                      <span className={`inline-flex mt-1 px-2 py-1 rounded-md border text-xs ${statusTone[item.status] || "bg-muted"}`}>
+                        {item.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No consultations scheduled for today.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-amber-500" />Attention Items</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {urgentItems.length === 0 ? (
+              <p className="text-muted-foreground">No urgent actions right now. Great work!</p>
+            ) : (
+              urgentItems.map((item) => (
+                <div key={item} className="rounded-md bg-amber-50 border border-amber-200 p-2">
+                  {item}
+                </div>
+              ))
+            )}
+            <div className="pt-2 border-t text-xs text-muted-foreground">
+              Published: <span className="font-semibold">{summary.kpis.publishedArticles}</span> · Drafts: <span className="font-semibold">{summary.kpis.draftArticles}</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {officerModules.map((module) => {
+        {quickActions.map((module) => {
           const Icon = module.icon;
           return (
             <Card key={module.title}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Icon className="h-5 w-5 text-blue-600" />
-                  {module.title}
-                </CardTitle>
+                <CardTitle className="flex items-center gap-2 text-lg"><Icon className="h-5 w-5 text-blue-600" />{module.title}</CardTitle>
                 <CardDescription>{module.description}</CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
-                  <Link to={module.href}>Open {module.title}</Link>
+                  <Link to={module.href}>
+                    Open {module.title}
+                    <ArrowUpRight className="w-4 h-4 ml-2" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

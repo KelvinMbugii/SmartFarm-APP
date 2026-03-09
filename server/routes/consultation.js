@@ -2,6 +2,11 @@ const express = require('express');
 const Consultation = require('../models/Consultation');
 const User = require('../models/user');
 const auth = require('../middlewares/auth');
+const {
+    getEffectiveAvailabilityForDate,
+    isTimeWithinWindow,
+    toDateOnlyKey,
+} = require('../utils/availability');
 
 const router = express.Router();
 
@@ -67,12 +72,62 @@ router.post('/', auth.protect, async (req, res) => {
             return res.status(400).json({ error: 'Invalid officer selected' });
         }
 
+        const normalizedType = consultationType || 'chat';
+
+        if ((normalizedType === 'video-call' || normalizedType === 'in-person') && (!scheduledDate || !scheduledTime)) {
+            return res.status(400).json({ error: 'Scheduled date and time are required for this consultation type' });
+        }
+
+        if (scheduledDate && scheduledTime) {
+            const dateKey = toDateOnlyKey(scheduledDate);
+            const availabilityWindow = getEffectiveAvailabilityForDate(officer, dateKey);
+
+            if (!availabilityWindow) {
+                return res.status(400).json({ error: 'Officer is not available on the selected date' });
+            }
+
+            const validTime = isTimeWithinWindow({
+                startTime: availabilityWindow.startTime,
+                endTime: availabilityWindow.endTime,
+                targetTime: scheduledTime,
+            });
+
+            if (!validTime) {
+                return res.status(400).json({ error: 'Selected time is outside officer availability window' });
+            }
+
+            const dayStart = new Date(`${dateKey}T00:00:00.000Z`);
+            const dayEnd = new Date(`${dateKey}T23:59:59.999Z`);
+
+            const [existingSameTime, dailyCount] = await Promise.all([
+                Consultation.countDocuments({
+                    officer: officerId,
+                    scheduledDate: { $gte: dayStart, $lte: dayEnd },
+                    scheduledTime,
+                    status: { $nin: ['cancelled'] },
+                }),
+                Consultation.countDocuments({
+                    officer: officerId,
+                    scheduledDate: { $gte: dayStart, $lte: dayEnd },
+                    status: { $nin: ['cancelled'] },
+                }),
+            ]);
+
+            if (existingSameTime > 0) {
+                return res.status(409).json({ error: 'Selected slot is already booked' });
+            }
+
+            if (dailyCount >= (officer.maxDailyBookings || 8)) {
+                return res.status(409).json({ error: 'Officer has reached the maximum daily bookings for this date' });
+            }
+        }
+
         const consultation = new Consultation({
             farmer: req.user._id,
             officer: officerId,
             subject,
             description,
-            consultationType: consultationType || 'chat',
+            consultationType: normalizedType,
             scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
             scheduledTime,
             status: scheduledDate ? 'scheduled' : 'pending'
@@ -203,4 +258,3 @@ router.get('/officers/available', auth.protect, async (req, res) => {
 });
 
 module.exports = router;
-

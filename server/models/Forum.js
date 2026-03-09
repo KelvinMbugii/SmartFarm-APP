@@ -1,93 +1,169 @@
 const mongoose = require('mongoose');
 
-const commentSchema = new mongoose.Schema({
+const reportSchema = new mongoose.Schema(
+  {
+    reporter: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
+    },
+    reason: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    targetType: {
+      type: String,
+      enum: ['post', 'comment'],
+      default: 'post',
+    },
+    targetCommentId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    status: {
+      type: String,
+      enum: ['open', 'resolved'],
+      default: 'open',
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    reviewedAt: Date,
+    note: String,
+  },
+  { timestamps: true }
+);
+
+const commentSchema = new mongoose.Schema(
+  {
     author: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
     },
     content: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
-    likes: [{
+    likes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
-    }],
-    replies: [{
+        ref: 'user',
+      },
+    ],
+    verifiedAnswer: {
+      type: Boolean,
+      default: false,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    verifiedAt: Date,
+    replies: [
+      {
         author: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'user',
-            required: true
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'user',
+          required: true,
         },
         content: {
-            type: String,
-            required: true
+          type: String,
+          required: true,
         },
-        likes: [{
+        likes: [
+          {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'user'
-        }],
+            ref: 'user',
+          },
+        ],
         createdAt: {
-            type: Date,
-            default: Date.now
-        }
-    }]
-}, {
-    timestamps: true
-});
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
-const forumPostSchema = new mongoose.Schema({
+const forumPostSchema = new mongoose.Schema(
+  {
     title: {
-        type: String,
-        required: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
     content: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     author: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+      required: true,
     },
     category: {
-        type: String,
-        required: true,
-        enum: ['general', 'crops', 'livestock', 'equipment', 'market', 'pest-disease', 'irrigation', 'organic', 'technology', 'help'],
-        default: 'general'
+      type: String,
+      required: true,
+      enum: [
+        'general',
+        'crops',
+        'livestock',
+        'equipment',
+        'market',
+        'pest-disease',
+        'irrigation',
+        'organic',
+        'technology',
+        'help',
+      ],
+      default: 'general',
     },
-    tags: [{
+    tags: [
+      {
         type: String,
-        trim: true
-    }],
+        trim: true,
+      },
+    ],
     views: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
-    likes: [{
+    likes: [
+      {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
-    }],
+        ref: 'user',
+      },
+    ],
     comments: [commentSchema],
+    reports: [reportSchema],
     pinned: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
+    pinnedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'user',
+    },
+    pinnedAt: Date,
     solved: {
-        type: Boolean,
-        default: false
+      type: Boolean,
+      default: false,
     },
     image: {
-        type: String,
-        default: ''
-    }
-}, {
-    timestamps: true
-});
+      type: String,
+      default: '',
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-// Index for search
 forumPostSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
-module.exports = mongoose.model('Forum', forumPostSchema, 'forum_posts', commentSchema);
+module.exports = mongoose.model('Forum', forumPostSchema, 'forum_posts');

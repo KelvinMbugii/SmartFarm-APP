@@ -66,6 +66,19 @@ class ConsultationService {
     }
   }
 
+
+  async getOfficerSlots(officerId, date) {
+    try {
+      const response = await api.get(`${API_BASE_URL}/api/officers/${officerId}/slots`, {
+        params: { date },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching officer slots:', error);
+      throw error;
+    }
+  }
+
   async getAvailableOfficers() {
     try {
       const response = await api.get(`${API_BASE_URL}/api/consultation/officers/available`);
@@ -78,4 +91,3 @@ class ConsultationService {
 }
 
 export default new ConsultationService();
-

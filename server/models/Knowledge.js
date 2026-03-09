@@ -21,6 +21,18 @@ const knowledgeSchema = new mongoose.Schema({
         ref: 'user',
         required: true
     },
+    status: {
+        type: String,
+        enum: ['draft', 'published'],
+        default: 'published',
+    },
+    publishedAt: {
+        type: Date,
+    },
+    coverImageUrl: {
+        type: String,
+        default: '',
+    },
     tags: [{
         type: String,
         trim: true
@@ -54,4 +66,3 @@ const knowledgeSchema = new mongoose.Schema({
 knowledgeSchema.index({ title: 'text', content: 'text', tags: 'text' });
 
 module.exports = mongoose.model('Knowledge', knowledgeSchema);
-
