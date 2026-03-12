@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const formatValidationError = require("../utils/formatValidationError");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
 
 const CANONICAL_ROLES = ["farmer", "agripreneur", "officer", "admin"];
 
@@ -81,6 +83,8 @@ const register = async (req, res) => {
     });
   }
 };
+
+
 
 module.exports = {
   register,

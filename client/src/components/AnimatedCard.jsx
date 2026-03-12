@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion as Motion } from "framer-motion";
 
 const AnimatedCard = ({
   children,
@@ -42,7 +42,7 @@ const AnimatedCard = ({
     : {};
 
   return (
-    <motion.div
+    <Motion.div
       className={`stat-card ${className}`}
       variants={cardVariants}
       whileHover="hover"
@@ -54,7 +54,7 @@ const AnimatedCard = ({
       {...props}
     >
       {children}
-    </motion.div>
+    </Motion.div>
   );
 };
 

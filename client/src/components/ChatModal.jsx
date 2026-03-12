@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Paperclip, Smile } from 'lucide-react';
 
 const ChatModal = ({ isOpen, onClose, expertName = "Agricultural Expert" }) => {
@@ -95,14 +95,14 @@ const ChatModal = ({ isOpen, onClose, expertName = "Agricultural Expert" }) => {
     <AnimatePresence>
       {isOpen && (
         <>
-          <motion.div
+          <Motion.div
             className="fixed inset-0 bg-black bg-opacity-50 z-50"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          <motion.div
+          <Motion.div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             variants={modalVariants}
             initial="hidden"
@@ -136,7 +136,7 @@ const ChatModal = ({ isOpen, onClose, expertName = "Agricultural Expert" }) => {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((message) => (
-                  <motion.div
+                  <Motion.div
                     key={message.id}
                     variants={messageVariants}
                     initial="hidden"
@@ -153,35 +153,35 @@ const ChatModal = ({ isOpen, onClose, expertName = "Agricultural Expert" }) => {
                       <p className="text-sm">{message.text}</p>
                       <p className="text-xs opacity-70 mt-1">{message.timestamp}</p>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 ))}
                 
                 {isTyping && (
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="flex justify-start"
                   >
                     <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
                       <div className="flex space-x-1">
-                        <motion.div
+                        <Motion.div
                           className="w-2 h-2 bg-gray-500 rounded-full"
                           animate={{ y: [0, -5, 0] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
                         />
-                        <motion.div
+                        <Motion.div
                           className="w-2 h-2 bg-gray-500 rounded-full"
                           animate={{ y: [0, -5, 0] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
                         />
-                        <motion.div
+                        <Motion.div
                           className="w-2 h-2 bg-gray-500 rounded-full"
                           animate={{ y: [0, -5, 0] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
                         />
                       </div>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -203,18 +203,18 @@ const ChatModal = ({ isOpen, onClose, expertName = "Agricultural Expert" }) => {
                   <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
                     <Smile className="w-5 h-5 text-gray-500" />
                   </button>
-                  <motion.button
+                  <Motion.button
                     onClick={handleSendMessage}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="p-2 bg-primary text-white rounded-full hover:bg-primary-dark transition-colors"
                   >
                     <Send className="w-5 h-5" />
-                  </motion.button>
+                  </Motion.button>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </>
       )}
     </AnimatePresence>
