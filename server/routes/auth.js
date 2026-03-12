@@ -25,6 +25,14 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid credentials" });
     }
 
+    if (user.isActive === false) {
+      return res
+        .status(403)
+        .json({
+          error: "Account has been deactivated. Please contact support.",
+        });
+    }
+
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
@@ -84,15 +92,8 @@ router.post("/logout", auth.protect, async (req, res) => {
 // Post/api/auth/forgot-password
 router.post("/forgot-password", async (req, res) => {
   try {
-    const normalizedEmail = String(req.body?.email || "")
-      .trim()
-      .toLowerCase();
-
-    if (!normalizedEmail) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    const user = await User.findOne({ email: normalizedEmail });
+    const { email } = req.body;
+    const user = await User.findOne({ email });
     const genericMsg = {
       message: "Check your email, a reset link has been sent.",
     };
@@ -122,7 +123,7 @@ router.post("/forgot-password", async (req, res) => {
     } catch (error) {
       // In local/dev setup
       if (
-        error.code === "EMAIL_CONFIG_MISSING" &&
+        error.code === "Email_CONFIG_MISSING" &&
         process.env.NODE_ENV !== "production"
       ) {
         console.warn(
