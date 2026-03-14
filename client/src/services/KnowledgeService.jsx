@@ -90,3 +90,58 @@ class KnowledgeService {
 }
 
 export default new KnowledgeService();
+
+
+// import api from './api';
+
+// class KnowledgeService {
+
+//   async getArticles(params = {}) {
+//     const response = await api.get("/api/knowledge", { params });
+//     return response.data;
+//   }
+
+//   async getArticle(id) {
+//     const response = await api.get(`/api/knowledge/${id}`);
+//     return response.data;
+//   }
+
+//   async uploadArticleImage(file) {
+//     const formData = new FormData();
+//     formData.append("image", file);
+
+//     const response = await api.post("/api/knowledge/upload-image", formData, {
+//       headers: { "Content-Type": "multipart/form-data" },
+//     });
+
+//     return response.data;
+//   }
+
+//   async createArticle(articleData) {
+//     const response = await api.post("/api/knowledge", articleData);
+//     return response.data;
+//   }
+
+//   async updateArticle(id, articleData) {
+//     const response = await api.put(`/api/knowledge/${id}`, articleData);
+//     return response.data;
+//   }
+
+//   async deleteArticle(id) {
+//     const response = await api.delete(`/api/knowledge/${id}`);
+//     return response.data;
+//   }
+
+//   async likeArticle(id) {
+//     const response = await api.post(`/api/knowledge/${id}/like`);
+//     return response.data;
+//   }
+
+//   async getCategories() {
+//     const response = await api.get("/api/knowledge/meta/categories");
+//     return response.data;
+//   }
+
+// }
+
+// export default new KnowledgeService();
