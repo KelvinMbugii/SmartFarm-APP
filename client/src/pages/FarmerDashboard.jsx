@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import ConsultationRoom from "@/components/ConsultationRoom";
+//import ConsultationRoom from "@/components/ConsultationRoom";
 import marketplaceApi from "@/services/MarketplaceService";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ export default function FarmerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [showConsultation, setShowConsultation] = useState(false);
+  //const [showConsultation, setShowConsultation] = useState(false);
   const [loadingListings, setLoadingListings] = useState(true);
   const [useMock, setUseMock] = useState(false);
   const [myListings, setMyListings] = useState([]);
@@ -42,7 +42,7 @@ export default function FarmerDashboard() {
         const { data } = await marketplaceApi.getMyProducts();
         setMyListings(Array.isArray(data) ? data : []);
         setUseMock(false);
-      } catch (e) {
+      } catch{
         setMyListings(MOCK_MY_LISTINGS);
         setUseMock(true);
         toast.message("Using mock listings (debugging)");
@@ -204,7 +204,8 @@ export default function FarmerDashboard() {
         <CardContent className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            onClick={() => setShowConsultation(true)}
+            //onClick={() => setShowConsultation(true)}
+            onClick={() => navigate("/consultations")}
             className="gap-2"
           >
             <MessageSquare className="h-4 w-4" />
@@ -225,12 +226,12 @@ export default function FarmerDashboard() {
         </CardContent>
       </Card>
 
-      {showConsultation && (
+      {/* {showConsultation && (
         <ConsultationRoom
           userProfile={user}
           onClose={() => setShowConsultation(false)}
         />
-      )}
+      )} */}
     </div>
   );
 }

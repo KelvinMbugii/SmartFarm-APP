@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 
-// Protect routes - verify JWT token
+/// Protect routes - verify JWT token
 const protect = async (req, res, next) => {
   try {
     // Allow OPTIONS method to pass for CORS preflight
@@ -42,6 +42,10 @@ const protect = async (req, res, next) => {
         .json({ message: "Not authorized, user not found" });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({ message: "Account is deactivated. Contact administrator." });
+    }
+
     req.user = user;
     req.user.userId = req.user._id;
     next();
@@ -71,7 +75,4 @@ const generateToken = (userId) => {
 };
 
 module.exports = { protect, authorizeRoles, generateToken };
-
-
-
 
