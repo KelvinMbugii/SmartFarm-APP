@@ -85,6 +85,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    publicKey: {
+      type: String,
+      default: "",
+    },
     isOnline: {
       type: Boolean,
       default: false,

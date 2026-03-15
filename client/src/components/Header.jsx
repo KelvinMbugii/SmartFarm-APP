@@ -9,13 +9,13 @@ import {
   ChevronDown,
   User,
 } from "lucide-react";
-import profileImage from "@/assets/logo.png";
+import profileImage from "@/assets/logo.jpeg";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth()
 
   const [menuOpen, setMenuOpen] = useState(false);
 
