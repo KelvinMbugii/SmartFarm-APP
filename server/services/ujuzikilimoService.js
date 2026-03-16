@@ -38,7 +38,6 @@
 //   generateUjuziToken,
 // };
 
-const fetch = require("node-fetch");
 const { getUSDtoKESRate } = require("./currencyService");
 
 const API_KEY = process.env.UJUZI_API_KEY;
@@ -48,8 +47,12 @@ const generateToken = async () => {
   const res = await fetch(`${UJUZI_BASE}/auth/generate-token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ api_key: API_KEY, device_name: "SmartFarm" }),
+    body: JSON.stringify({
+      api_key: API_KEY,
+      device_name: "SmartFarm",
+    }),
   });
+
   const data = await res.json();
   return data.token;
 };
@@ -58,9 +61,13 @@ const generateToken = async () => {
 const getMarketPrices = async (countryCode = "KE") => {
   try {
     const token = await generateToken();
+
     const res = await fetch(`${UJUZI_BASE}/markets?country=${countryCode}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
     const data = await res.json();
     const usdToKES = await getUSDtoKESRate();
 
@@ -70,7 +77,7 @@ const getMarketPrices = async (countryCode = "KE") => {
         commodity: m.commodity,
         variety: m.variety || "Standard",
         market: m.market,
-        price: m.price_usd * usdToKES, // dynamic KES
+        price: m.price_usd * usdToKES, // convert USD → KES
         unit: m.unit || "per quintal",
         date: new Date(m.date),
         trend: m.change > 0 ? "up" : m.change < 0 ? "down" : "flat",
