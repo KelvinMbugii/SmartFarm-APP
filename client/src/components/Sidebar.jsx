@@ -51,11 +51,13 @@ const Sidebar = () => {
         links: [
           { name: "Sell Produce", icon: Package, href: "/sell-produce" },
           { name: "My Orders", icon: ShoppingCart, href: "/my-orders" },
+          { name: "Marketplace", icon: ShoppingCart, href: "/marketplace" },
         ],
       },
       {
         title: "Consultations & AI",
         links: [
+          { name: "Charts", icon: MessageCircle, href: "/chat" },
           { name: "Consultations", icon: Calendar, href: "/consultations" },
           { name: "AI Assistant", icon: BarChart3, href: "/analytics" },
         ],
