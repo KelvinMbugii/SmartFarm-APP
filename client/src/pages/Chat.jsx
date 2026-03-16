@@ -1034,7 +1034,7 @@ const Chat = () => {
                   </div>
                 </div>
 
-                {/* Input Bar — always pinned to bottom */}
+                {/* Input Bar — always pinned to bottom
                 <div className="shrink-0 flex items-center gap-2 p-3 border-t bg-background">
                   <input
                     ref={fileRef}
@@ -1067,7 +1067,7 @@ const Chat = () => {
                   >
                     <Send className="h-4 w-4" />
                   </Button>
-                </div>
+                </div> */}
               </CardContent>
             </>
           ) : (
@@ -1083,9 +1083,59 @@ const Chat = () => {
                     Select a chat or start a new conversation
                   </p>
                 </div>
+                {/* </div>
+            </CardContent>
+          )}
+        </Card>
+      </div>
+    </div> */}
               </div>
             </CardContent>
           )}
+
+          <CardContent className="pt-0">
+            <div className="shrink-0 flex items-center gap-2 p-3 border-t bg-background">
+              <input
+                ref={fileRef}
+                type="file"
+                className="hidden"
+                onChange={handleFilePick}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => fileRef.current?.click()}
+                disabled={!activeChat}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Input
+                value={newMessage}
+                onChange={(e) => onTyping(e.target.value)}
+                placeholder={
+                  activeChat
+                    ? "Type a message..."
+                    : "Type your message here, then select a chat to send"
+                }
+                className="flex-1"
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  activeChat &&
+                  sendMessage()
+                }
+              />
+              <Button
+                onClick={() => sendMessage()}
+                size="icon"
+                className="shrink-0"
+                disabled={!activeChat || !newMessage.trim()}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>
