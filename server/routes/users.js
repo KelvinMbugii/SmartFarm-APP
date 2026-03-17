@@ -21,7 +21,7 @@ router.get('/', protect, async ( req, res) => {
         }
 
         const users = await User.find(query)
-          .select("name email role location Phone avatar isOnline LastSeen")
+          .select("name email role location Phone avatar isOnline LastSeen publicKey")
           .sort({ isOnline: -1, LastSeen: -1 });
 
         res.json(
@@ -43,7 +43,7 @@ router.get('/', protect, async ( req, res) => {
 router.get("/online", protect, async (req, res) => {
   try {
     const users = await User.find({ isOnline: true })
-      .select("name email role location Phone avatar isOnline LastSeen")
+      .select("name email role location Phone avatar isOnline LastSeen publicKey")
       .sort({ LastSeen: -1 });
 
     res.json(
@@ -74,6 +74,27 @@ router.get('/:id', protect, async (req, res) => {
     }catch (error){
         res.status(500).json({ error: error.message});
     }
+});
+
+// Upsert user public key
+router.put('/keys/public', protect, async (req, res) => {
+  try {
+    const { publicKey } = req.body;
+
+    if(!publicKey || typeof publicKey !== 'string') {
+      return res.status(400).json({ error: 'Invalid public key'});
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { publicKey },
+      { new: true }
+    ).select('name email role location Phone avatar isOnline LastSeen publicKey');
+
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Update user profile (farmers, agripreneurs, officers, admin)

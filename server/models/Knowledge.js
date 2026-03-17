@@ -18,7 +18,7 @@ const knowledgeSchema = new mongoose.Schema({
     },
     author: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        ref: 'User',
         required: true
     },
     status: {
@@ -43,7 +43,7 @@ const knowledgeSchema = new mongoose.Schema({
     },
     likes: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user'
+        ref: 'User'
     }],
     featured: {
         type: Boolean,

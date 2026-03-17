@@ -10,6 +10,7 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
     condition: "above", 
     email: "",
     sms: false,
+    phone: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -35,6 +36,7 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
         {
           email: alertData.email,
           sms: alertData.sms,
+          phone: alertData.phone,
         }
       );
 
@@ -48,6 +50,7 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
           condition: "above",
           email: "",
           sms: false,
+          phone: "",
         });
       }, 2000);
     } catch (error) {
@@ -252,25 +255,42 @@ const PriceAlertModal = ({ isOpen, onClose, commodity = "Rice" }) => {
                       />
                     </div>
 
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="sms"
-                        checked={alertData.sms}
-                        onChange={(e) =>
-                          setAlertData((prev) => ({
-                            ...prev,
-                            sms: e.target.checked,
-                          }))
-                        }
-                        className="mr-2"
-                      />
-                      <label
-                        htmlFor="sms"
-                        className="text-sm text-gray-700 dark:text-gray-300"
-                      >
-                        Also send SMS alerts
-                      </label>
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="sms"
+                          checked={alertData.sms}
+                          onChange={(e) =>
+                            setAlertData((prev) => ({
+                              ...prev,
+                              sms: e.target.checked,
+                            }))
+                          }
+                          className="mr-2"
+                        />
+                        <label
+                          htmlFor="sms"
+                          className="text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          Also send SMS alerts
+                        </label>
+                      </div>
+
+                      {alertData.sms && (
+                        <input
+                          type="tel"
+                          value={alertData.phone}
+                          onChange={(e) =>
+                            setAlertData((prev) => ({
+                              ...prev,
+                              phone: e.target.value,
+                            }))
+                          }
+                          placeholder="Phone number (optional)"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        />
+                      )}
                     </div>
 
                     <div className="flex space-x-3 pt-4">

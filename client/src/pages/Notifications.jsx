@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -10,119 +10,101 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import {
-  Bell,
-  Users,
-  Search,
-  MessageCircle,
-  TrendingUp,
-  Activity,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { Bell, CheckCheck, MessageCircle, Search, Users} from "lucide-react";
 import api from "@/services/api";
 import { useSocket } from "@/contexts/SocketContext";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+function formatRelative(dateString){
+  const date = new Date(dateString);
+  const diffMs = Date.now() - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
 
-// Mock data for easy debugging when API fails
-const MOCK_ONLINE_USERS = [
-  { id: "1", name: "John Kamau", role: "farmer", isOnline: true, lastSeen: new Date() },
-  { id: "2", name: "Mary Wanjiku", role: "farmer", isOnline: true, lastSeen: new Date() },
-  { id: "3", name: "Officer Peter", role: "officer", isOnline: true, lastSeen: new Date() },
-  { id: "4", name: "Grace Muthoni", role: "farmer", isOnline: true, lastSeen: new Date() },
-  { id: "5", name: "David Ochieng", role: "agripreneur", isOnline: false, lastSeen: new Date(Date.now() - 3600000) },
-];
-
-const MOCK_ACTIVITY_DATA = [
-  { day: "Mon", consultations: 4, orders: 12, messages: 8 },
-  { day: "Tue", consultations: 6, orders: 15, messages: 11 },
-  { day: "Wed", consultations: 3, orders: 9, messages: 6 },
-  { day: "Thu", consultations: 8, orders: 18, messages: 14 },
-  { day: "Fri", consultations: 5, orders: 14, messages: 9 },
-  { day: "Sat", consultations: 2, orders: 7, messages: 4 },
-  { day: "Sun", consultations: 1, orders: 4, messages: 3 },
-];
-
-const MOCK_ROLE_DISTRIBUTION = [
-  { name: "Farmers", value: 45, color: "#22c55e" },
-  { name: "Officers", value: 12, color: "#3b82f6" },
-  { name: "Agripreneurs", value: 18, color: "#8b5cf6" },
-  { name: "Admins", value: 3, color: "#f59e0b" },
-];
+ if (diffMs < minute) return "Just now";
+  if (diffMs < hour) return `${Math.floor(diffMs / minute)}m ago`;
+  if (diffMs < day) return `${Math.floor(diffMs / hour)}h ago`;
+  return `${Math.floor(diffMs / day)}d ago`;
+}
 
 export default function Notifications() {
-  const { user } = useAuth();
   const { socket, isConnected } = useSocket();
+  const [notifications, setNotifications] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [activityData, setActivityData] = useState([]);
-  const [roleData, setRoleData] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [useMock, setUseMock] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState(null);
+
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => !notification.read).length,
+    [notifications]
+  );
+
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [{ data: listData }, { data: usersData }] = await Promise.all([
+        api.get("/api/notifications", { params: { limit: 20 } }),
+        api.get("/api/users/online"),
+      ]);
+
+      setNotifications(
+        Array.isArray(listData.notifications) ? listData.notifications : [],
+      );
+      setNextCursor(listData.nextCursor || null);
+      setOnlineUsers(Array.isArray(usersData) ? usersData : []);
+    } catch (error) {
+      setNotifications([]);
+      setOnlineUsers([]);
+    } finally {
+      setLoading(false);
+    }
+
+  }, []);
+
+  const loadMore = async () => {
+    if (!nextCursor || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const { data } = await api.get("/api/notifications", {
+        params: { limit: 20, cursor: nextCursor },
+      });
+
+      setNotifications((prev) => [
+        ...prev,
+        ...(Array.isArray(data.notifications) ? data.notifications : []),
+      ]);
+      setNextCursor(data.nextCursor || null);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data } = await api.get(`${API_BASE.replace(/\/$/, "")}/api/users/online`);
-        const users = Array.isArray(data) ? data : [];
-        // Endpoint returns online users only; normalize fields
-        setOnlineUsers(
-          users.map((u) => ({
-            ...u,
-            id: u._id || u.id,
-            isOnline: true,
-            lastSeen: u.lastSeen ? new Date(u.lastSeen) : new Date(),
-          }))
-        );
-        setUseMock(false);
+    fetchNotifications();
+  }, [fetchNotifications]);
 
-        // Activity and role charts are mock for now (debug-friendly)
-        setActivityData(MOCK_ACTIVITY_DATA);
-        setRoleData(MOCK_ROLE_DISTRIBUTION);
-      } catch (e) {
-        setOnlineUsers(MOCK_ONLINE_USERS);
-        setActivityData(MOCK_ACTIVITY_DATA);
-        setRoleData(MOCK_ROLE_DISTRIBUTION);
-        setUseMock(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
 
   // Real-time online users via Socket.IO presence
   useEffect(() => {
     if (!socket) return;
     const onOnlineUsers = (users) => {
-      if (!Array.isArray(users)) return;
-      setOnlineUsers(
-        users.map((u) => ({
-          ...u,
-          id: u._id || u.id,
-          isOnline: true,
-          lastSeen: u.lastSeen ? new Date(u.lastSeen) : new Date(),
-        }))
-      );
-      setUseMock(false);
+       if (Array.isArray(users)) setOnlineUsers(users);
+    };
+
+    const onNewNotification = (notification) => {
+      if (!notification?._id) return;
+      setNotifications((prev) => {
+        const exists = prev.some((n) => n._id === notification._id);
+        if (exists) return prev;
+        return [notification, ...prev];
+      });
     };
 
     socket.on("presence:online-users", onOnlineUsers);
+    socket.on("notification:new", onNewNotification)
     socket.emit("presence:request");
 
     return () => {
@@ -130,87 +112,213 @@ export default function Notifications() {
     };
   }, [socket]);
 
-  const filteredUsers = onlineUsers.filter(
-    (u) =>
-      (u.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.role || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const markAsRead = async (id) => {
+    try {
+      await api.patch(`/api/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification._id === id
+            ? { ...notification, read: true, readAt: new Date().toISOString() }
+            : notification,
+        ),
+      );
+    } catch (error) {
+      // no-op
+    }
+  };
 
-  const onlineCount = filteredUsers.length;
+ const markAllAsRead = async () => {
+   try {
+     await api.patch("/api/notifications/read-all");
+     setNotifications((prev) =>
+       prev.map((notification) => ({
+         ...notification,
+         read: true,
+         readAt: notification.readAt || new Date().toISOString(),
+       })),
+     );
+   } catch (error) {
+     // no-op
+   }
+ };
+
+ const filteredOnlineUsers = onlineUsers.filter((user) => {
+   const term = searchTerm.trim().toLowerCase();
+   if (!term) return true;
+   return (
+     String(user?.name || "")
+       .toLowerCase()
+       .includes(term) ||
+     String(user?.role || "")
+       .toLowerCase()
+       .includes(term)
+   );
+ });
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Notifications & Activity</h1>
-          <p className="text-muted-foreground mt-1">
-            See who's online and track your SmartFarm activity
+          <h1 className="text-3xl font-bold text-foreground">Notifications</h1>
+          <p className="mt-1 text-muted-foreground">
+            Realtime inbox and online community activity
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={isConnected ? "default" : "secondary"}>
             {isConnected ? "Live" : "Offline"}
           </Badge>
-          {useMock && (
-            <Badge variant="secondary" className="w-fit">
-              Using mock data for debugging
-            </Badge>
-          )}
+          <Badge variant={unreadCount > 0 ? "default" : "outline"}>
+            {unreadCount} unread
+          </Badge>
         </div>
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Inbox
+            </CardTitle>
+            <CardDescription>
+              Your in-app notifications are stored here.
+            </CardDescription>
+          </div>
+          <Button
+            variant="outline"
+            onClick={markAllAsRead}
+            disabled={!notifications.length || unreadCount === 0}
+          >
+            <CheckCheck className="mr-2 h-4 w-4" /> Mark all as read
+          </Button>
+        </CardHeader>
+
+        <CardContent className="space-y-3">
+          {loading ? (
+            <div className="space-y-2">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="h-20 animate-pulse rounded-lg bg-muted"
+                />
+              ))}
+            </div>
+          ) : notifications.length === 0 ? (
+            <p className="rounded-lg border border-dashed py-8 text-center text-muted-foreground">
+              No notifications yet.
+            </p>
+          ) : (
+            <>
+              {notifications.map((notification) => (
+                <div
+                  key={notification._id}
+                  className={`rounded-lg border p-4 transition ${
+                    notification.read ? "bg-card" : "bg-muted/40"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{notification.title}</p>
+                        {!notification.read && <Badge>New</Badge>}
+                        <Badge variant="outline" className="capitalize">
+                          {notification.type || "system"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {notification.body}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatRelative(notification.createdAt)}
+                      </p>
+                    </div>
+                    {!notification.read && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => markAsRead(notification._id)}
+                      >
+                        Mark read
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {nextCursor && (
+                <Button
+                  onClick={loadMore}
+                  variant="outline"
+                  disabled={loadingMore}
+                  className="w-full"
+                >
+                  {loadingMore ? "Loading..." : "Load older notifications"}
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Online Users */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-green-500" />
                 Online Users
               </CardTitle>
-              <CardDescription>{onlineCount} users currently online</CardDescription>
+              <CardDescription>
+                {filteredOnlineUsers.length} users currently online
+              </CardDescription>
             </div>
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search by name or role..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(event) => setSearchTerm(event.target.value)}
                 className="pl-9"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />
-              ))}
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No users found</p>
+          {filteredOnlineUsers.length === 0 ? (
+            <p className="py-8 text-center text-muted-foreground">
+              No online users found
+            </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredUsers.map((u) => (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {filteredOnlineUsers.map((user) => (
                 <div
-                  key={u.id || u._id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                  key={user._id || user.id}
+                  className="flex items-center gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/50"
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={u.avatar} />
+                    <AvatarImage src={user.avatar} />
                     <AvatarFallback>
-                      {(u.name || "U").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      {(user.name || "U")
+                        .split(" ")
+                        .map((name) => name[0])
+                        .join("")
+                        .slice(0, 2)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate">{u.name || "Unknown"}</p>
+                    <p className="truncate font-medium">
+                      {user.name || "Unknown"}
+
+                    </p>
+                      
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-xs capitalize">
-                        {u.role || "user"}
+                        {user.role || "user"}
                       </Badge>
                       <span className="flex items-center gap-1 text-xs text-green-600">
-                        <span className="w-2 h-2 rounded-full bg-green-500" />
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
                         Online
                       </span>
                     </div>
@@ -222,103 +330,6 @@ export default function Notifications() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Weekly Activity
-            </CardTitle>
-            <CardDescription>
-              Consultations, orders, and messages over the past week
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={activityData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="consultations" fill="#22c55e" name="Consultations" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="orders" fill="#3b82f6" name="Orders" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="messages" fill="#8b5cf6" name="Messages" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              User Distribution
-            </CardTitle>
-            <CardDescription>Active users by role</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={roleData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={2}
-                    dataKey="value"
-                    nameKey="name"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {roleData.map((entry, index) => (
-                      <Cell key={entry.name} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => [v, "Users"]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Activity Trend Line */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Activity Trend</CardTitle>
-          <CardDescription>Combined activity over the week</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={activityData.map((d) => ({
-                  ...d,
-                  total: d.consultations + d.orders + d.messages,
-                }))}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ fill: "#10b981" }}
-                  name="Total Activity"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
         </CardContent>
       </Card>
     </div>
