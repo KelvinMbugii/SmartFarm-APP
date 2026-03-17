@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 import { useSocket } from "../contexts/SocketContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, Send, Search, Plus } from "lucide-react";
+import { Search, Send, MoreVertical, Phone, Video, ArrowLeft } from "lucide-react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -21,6 +18,8 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showChatList, setShowChatList] = useState(true);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -39,54 +38,64 @@ const Chat = () => {
     }
   }, [socket]);
 
+  useEffect(() => {
+    if (activeChat) {
+      fetchMessages(activeChat.id);
+      setShowChatList(false);
+    } else {
+      setShowChatList(true);
+    }
+  }, [activeChat]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const fetchUsers = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setUsers(response.data);
     } catch (error) {
-      if (error.response) {
-        // Server responded with a status other than 2xx
-        console.error("Fetch users failed:", error.response.data);
-      } else {
-        console.error("Error fetching users:", error.message);
-      }
+      console.error("Error fetching users:", error);
     }
   };
 
   const fetchChats = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/chat`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setChats(response.data);
     } catch (error) {
-      if (error.response) {
-        console.error("Fetch chats failed:", error.response.data);
-      } else {
-        console.error("Error fetching chats:", error.message);
-      }
+      console.error("Error fetching chats:", error);
+    }
+  };
+
+  const fetchMessages = async (chatId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/chat/${chatId}/messages`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setMessages(response.data || []);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      setMessages([]);
     }
   };
 
   const handleNewMessage = (data) => {
-    setMessages((prev) => [...prev, data.message]);
+    if (data.message.chatId === activeChat?.id) {
+      setMessages((prev) => [...prev, data.message]);
+    }
   };
 
   const handleMessageNotification = (data) => {
     setChats((prev) =>
       prev.map((chat) =>
         chat.id === data.chatId
-          ? {
-              ...chat,
-              lastMessage: data.message.content,
-              unreadCount: (chat.unreadCount || 0) + 1,
-            }
+          ? { ...chat, lastMessage: data.message.content, unreadCount: (chat.unreadCount || 0) + 1 }
           : chat
       )
     );
@@ -97,43 +106,25 @@ const Chat = () => {
       const response = await axios.post(
         `${API_BASE_URL}/api/chat`,
         { participantId: userId },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" } }
       );
       setChats((prev) => [response.data, ...prev]);
       setActiveChat(response.data);
     } catch (error) {
-      if (error.response) {
-        console.error("Error starting chat:", error.response.data);
-      } else {
-        console.error("Error starting chat:", error.message);
-      }
+      console.error("Error starting chat:", error);
     }
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeChat) return;
 
-    const messageData = {
-      chatId: activeChat.id,
-      content: newMessage,
-      type: "text",
-    };
+    const messageData = { chatId: activeChat.id, content: newMessage, type: "text" };
 
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/chat/${activeChat.id}/message`,
         messageData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        }
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" } }
       );
       setMessages((prev) => [...prev, response.data]);
       setNewMessage("");
@@ -146,11 +137,7 @@ const Chat = () => {
         });
       }
     } catch (error) {
-      if (error.response) {
-        console.error("Error sending message:", error.response.data);
-      } else {
-        console.error("Error sending message:", error.message);
-      }
+      console.error("Error sending message:", error);
     }
   };
 
@@ -160,222 +147,229 @@ const Chat = () => {
       u.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const goBack = () => {
+    setActiveChat(null);
+    setShowChatList(true);
+    fetchChats();
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6">
-      {/* Sidebar */}
-      <div className="w-80 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+    <div className="h-[calc(100vh-8rem)] flex bg-white dark:bg-gray-900 overflow-hidden rounded-lg shadow-lg">
+      {/* Chat List Sidebar - WhatsApp Style */}
+      <div className={`${showChatList || !activeChat ? 'flex' : 'hidden'} md:flex flex-col w-full md:w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700`}>
+        {/* Header */}
+        <div className="bg-[#128C7E] dark:bg-[#128C7E] p-3 flex items-center justify-between">
+          <Avatar className="h-10 w-10 border-2 border-white">
+            <AvatarImage src={user?.avatar} />
+            <AvatarFallback className="bg-[#075E54] text-white">{getInitials(user?.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+              <span className="text-lg">⋮</span>
+            </Button>
+          </div>
         </div>
 
-        {/* Active Chats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Active Chats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-64">
-              {chats.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No active chats
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {chats.map((chat) => {
-                    const otherUser = chat.participants.find(
-                      (p) => p.id !== user?.id
-                    );
-                    return (
-                      <div
-                        key={chat.id}
-                        className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                          activeChat?.id === chat.id
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted"
-                        }`}
-                        onClick={() => setActiveChat(chat)}
-                      >
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={otherUser?.avatar} />
-                          <AvatarFallback>
-                            {otherUser?.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="font-medium truncate">
-                              {otherUser?.name}
-                            </p>
-                            {chat.unreadCount > 0 && (
-                              <Badge variant="destructive" className="text-xs">
-                                {chat.unreadCount}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {chat.lastMessage}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+        {/* Search */}
+        <div className="bg-[#F0F2F5] dark:bg-gray-800 p-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
+            <Input
+              placeholder="Search or start new chat"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-white dark:bg-gray-700 border-none rounded-lg h-10"
+            />
+          </div>
+        </div>
 
-        {/* Available Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Start New Chat</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-64">
-              {filteredUsers.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No users found
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {filteredUsers.map((u) => (
+        {/* Chat List */}
+        <div className="flex-1 overflow-y-auto">
+          {chats.length === 0 && filteredUsers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
+              <p className="text-center">No chats yet</p>
+              <p className="text-sm">Search for users to start chatting</p>
+            </div>
+          ) : (
+            <>
+              {/* Active Chats */}
+              {chats.map((chat) => {
+                const otherUser = chat.participants.find((p) => p.id !== user?.id);
+                return (
+                  <div
+                    key={chat.id}
+                    className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
+                      activeChat?.id === chat.id ? "bg-gray-100 dark:bg-gray-800" : ""
+                    }`}
+                    onClick={() => setActiveChat(chat)}
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={otherUser?.avatar} />
+                      <AvatarFallback className="bg-[#E0E0E0] dark:bg-gray-600">{getInitials(otherUser?.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-gray-900 dark:text-white truncate">{otherUser?.name}</p>
+                        <span className="text-xs text-gray-500">{formatTime(chat.lastMessageAt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-500 truncate">{chat.lastMessage || "No messages yet"}</p>
+                        {chat.unreadCount > 0 && (
+                          <span className="bg-[#25D366] text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                            {chat.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* New Chat Section */}
+              {searchTerm && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <p className="px-3 py-2 text-xs text-gray-500 font-semibold uppercase">Start new chat</p>
+                  {filteredUsers.filter(u => !chats.some(c => c.participants.some(p => p.id === u.id))).map((u) => (
                     <div
                       key={u.id}
-                      className="flex items-center space-x-3 p-3 rounded-lg hover:bg-muted cursor-pointer"
+                      className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
                       onClick={() => startChat(u.id)}
                     >
-                      <Avatar className="h-10 w-10">
+                      <Avatar className="h-12 w-12">
                         <AvatarImage src={u.avatar} />
-                        <AvatarFallback>
-                          {u.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
+                        <AvatarFallback className="bg-[#E0E0E0] dark:bg-gray-600">{getInitials(u.name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <p className="font-medium truncate">{u.name}</p>
-                          {u.isOnline && (
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {u.role === "farmer"
-                            ? "Farmer"
-                            : "Agricultural Officer"}
-                        </p>
+                        <p className="font-semibold text-gray-900 dark:text-white truncate">{u.name}</p>
+                        <p className="text-xs text-gray-500 capitalize">{u.role}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1">
-        <Card className="h-full">
-          {activeChat ? (
-            <>
-              <CardHeader>
-                <div className="flex items-center space-x-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage
-                      src={
-                        activeChat.participants.find((p) => p.id !== user?.id)
-                          ?.avatar
-                      }
-                    />
-                    <AvatarFallback>
-                      {activeChat.participants
-                        .find((p) => p.id !== user?.id)
-                        ?.name.split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {
-                        activeChat.participants.find((p) => p.id !== user?.id)
-                          ?.name
-                      }
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {activeChat.participants.find((p) => p.id !== user?.id)
-                        ?.isOnline
-                        ? "Online"
-                        : "Offline"}
-                    </p>
+      {/* Chat Area - WhatsApp Style */}
+      <div className={`${showChatList && activeChat ? 'hidden' : 'flex'} flex-1 flex-col md:flex`}>
+        {activeChat ? (
+          <>
+            {/* Chat Header */}
+            <div className="bg-[#128C7E] dark:bg-[#128C7E] p-3 flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="md:hidden text-white hover:bg-white/20" onClick={goBack}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Avatar className="h-10 w-10 border-2 border-white">
+                <AvatarImage src={activeChat.participants.find((p) => p.id !== user?.id)?.avatar} />
+                <AvatarFallback className="bg-[#075E54] text-white">
+                  {getInitials(activeChat.participants.find((p) => p.id !== user?.id)?.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <p className="text-white font-semibold">
+                  {activeChat.participants.find((p) => p.id !== user?.id)?.name}
+                </p>
+                <p className="text-white/70 text-xs">
+                  {activeChat.participants.find((p) => p.id !== user?.id)?.isOnline ? "online" : "offline"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <Phone className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <Video className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 bg-[#E5DDD5] dark:bg-gray-800 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] dark:bg-[#0b141a] bg-cover">
+              <div className="space-y-2">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No messages yet. Say hi!</p>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col h-full">
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4 pb-4">
-                    {messages.map((message) => (
+                ) : (
+                  messages.map((message) => {
+                    const isSent = message.sender === user?.id;
+                    return (
                       <div
                         key={message.id}
-                        className={`flex ${
-                          message.sender === user?.id
-                            ? "justify-end"
-                            : "justify-start"
-                        }`}
+                        className={`flex ${isSent ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.sender === user?.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted"
+                          className={`max-w-[75%] px-4 py-2 rounded-lg shadow-sm ${
+                            isSent
+                              ? "bg-[#DCF8C6] dark:bg-[#056162] text-gray-900 dark:text-white rounded-tr-none"
+                              : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-tl-none"
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {new Date(message.timestamp).toLocaleTimeString()}
+                          <p className={`text-[10px] mt-1 text-right ${isSent ? "text-gray-500" : "text-gray-400"}`}>
+                            {formatTime(message.timestamp)}
                           </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                <div className="flex items-center space-x-2 pt-4 border-t">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type a message..."
-                    onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                  />
-                  <Button onClick={sendMessage} size="icon">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </>
-          ) : (
-            <CardContent className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  Select a chat to start messaging
-                </p>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            </CardContent>
-          )}
-        </Card>
+            </div>
+
+            {/* Input Area */}
+            <div className="bg-[#F0F2F5] dark:bg-gray-900 p-3 flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700">
+                <span className="text-xl">+</span>
+              </Button>
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 bg-white dark:bg-gray-800 border-none rounded-lg"
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              />
+              <Button 
+                onClick={sendMessage} 
+                className="bg-[#128C7E] hover:bg-[#075E54] text-white rounded-lg px-4"
+                disabled={!newMessage.trim()}
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          /* No Chat Selected */
+          <div className="flex-1 flex flex-col items-center justify-center bg-[#F8F9FA] dark:bg-gray-900">
+            <div className="bg-[#F8F9FA] dark:bg-gray-900 p-8 rounded-full mb-4">
+              <svg viewBox="0 0 24 24" className="w-32 h-32 text-[#128C7E]" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/>
+              </svg>
+            </div>
+            <h2 className="text-2xl font-light text-gray-600 dark:text-gray-300 mb-2">WhatsApp Web</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-center max-w-md">
+              Send and receive messages without keeping your phone online.<br/>
+              Use WhatsApp on up to 4 linked devices and 1 phone.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

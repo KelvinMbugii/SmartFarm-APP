@@ -17,6 +17,7 @@ import PriceAlertModal from "../components/PriceAlertModal";
 import weatherService from "../services/WeatherService";
 import marketService from "../services/MarketService";
 import DashboardOverview from "../components/DashboardOverview";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const [weatherData, setWeatherData] = useState(null);
@@ -55,105 +56,101 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <LoadingSpinner size="large" />
       </div>
     );
   }
 
   return (
-    <motion.div className="space-y-8 p-6 bg-background text-foreground transition-colors duration-300 dark:bg-background dark:text-foreground">
-      {/* Dashboard Overview */}
+    <motion.div className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <DashboardOverview />
 
-      {/* Weather Section */}
-      <AnimatedCard delay={0.4}>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold">Today's Weather</h2>
-          {weatherData?.condition?.includes("cloud") ? (
-            <Cloud className="w-6 h-6 text-accent" />
-          ) : (
-            <Sun className="w-6 h-6 text-accent" />
-          )}
-        </div>
-
-        {weatherData ? (
-          <div className="space-y-2">
-            <p className="text-3xl font-bold">{weatherData.temperature}°C</p>
-            <p className="text-sm">{weatherData.condition}</p>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Droplets className="w-4 h-4" />
-                {weatherData.humidity}%
-              </span>
-              <span className="flex items-center gap-1">
-                <Wind className="w-4 h-4" />
-                {weatherData.windSpeed} m/s
-              </span>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AnimatedCard delay={0.4}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold font-heading text-primary">Today Weather</h2>
+            {weatherData?.condition?.includes("cloud") ? (
+              <Cloud className="w-8 h-8 text-secondary" />
+            ) : (
+              <Sun className="w-8 h-8 text-accent" />
+            )}
           </div>
-        ) : (
-          <LoadingSpinner />
-        )}
-      </AnimatedCard>
 
-      {/* Market Prices Section */}
-      <AnimatedCard delay={0.6}>
-        <div className="flex justify-between items-center mb-3">
-          <h2 className="text-lg font-semibold">Market Prices</h2>
-          <TrendingUp className="w-6 h-6 text-primary" />
-        </div>
-
-        <div className="space-y-3">
-          {marketPrices.map((price) => (
-            <div
-              key={price.id}
-              className="flex justify-between p-3 rounded-lg bg-card text-card-foreground transition-colors duration-300 dark:bg-card dark:text-card-foreground"
-            >
-              <div>
-                <p className="font-medium">{price.commodity}</p>
-                <p className="text-xs text-muted-foreground">{price.market}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-semibold text-primary">₹{price.price}</p>
-                <p className="text-xs text-muted-foreground">per quintal</p>
+          {weatherData ? (
+            <div className="space-y-3">
+              <p className="text-4xl font-bold font-heading">{weatherData.temperature}C</p>
+              <p className="text-muted-foreground">{weatherData.condition}</p>
+              <div className="flex gap-6 text-sm text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Droplets className="w-5 h-5 text-primary" />
+                  {weatherData.humidity}%
+                </span>
+                <span className="flex items-center gap-2">
+                  <Wind className="w-5 h-5 text-primary" />
+                  {weatherData.windSpeed} m/s
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      </AnimatedCard>
+          ) : (
+            <LoadingSpinner />
+          )}
+        </AnimatedCard>
 
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-4 mt-4">
-        <motion.button
-          className="px-4 py-2 rounded-lg border border-border bg-background text-foreground hover:bg-primary hover:text-primary-foreground transition-colors duration-200 flex items-center gap-2"
-          whileHover={{ scale: 1.05 }}
+        <AnimatedCard delay={0.6}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold font-heading text-primary">Market Prices</h2>
+            <TrendingUp className="w-8 h-8 text-secondary" />
+          </div>
+
+          <div className="space-y-3">
+            {marketPrices.map((price) => (
+              <div
+                key={price.id}
+                className="flex justify-between p-4 rounded-lg bg-muted/50 transition-colors hover:bg-muted"
+              >
+                <div>
+                  <p className="font-semibold font-heading">{price.commodity}</p>
+                  <p className="text-xs text-muted-foreground">{price.market}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-primary">${price.price}</p>
+                  <p className="text-xs text-muted-foreground">per quintal</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </AnimatedCard>
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-4">
+        <Button
+          variant="outline"
           onClick={handleRefresh}
+          className="flex items-center gap-2"
         >
           <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
-        </motion.button>
+        </Button>
 
-        <motion.button
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 flex items-center gap-2"
-          whileHover={{ scale: 1.05 }}
+        <Button
           onClick={() => setChatModalOpen(true)}
+          className="flex items-center gap-2"
         >
           <MessageCircle className="w-5 h-5" />
           Contact Expert
-        </motion.button>
+        </Button>
 
-        <motion.button
-          className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 transition-colors duration-200 flex items-center gap-2"
-          whileHover={{ scale: 1.05 }}
+        <Button
+          variant="secondary"
           onClick={() => setPriceAlertModalOpen(true)}
+          className="flex items-center gap-2"
         >
           <Bell className="w-5 h-5" />
           Price Alerts
-        </motion.button>
+        </Button>
       </div>
 
-      {/* Modals */}
       <ChatModal
         isOpen={chatModalOpen}
         onClose={() => setChatModalOpen(false)}

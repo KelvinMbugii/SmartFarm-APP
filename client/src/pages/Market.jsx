@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,20 +19,7 @@ const Market = () => {
   const [alertModalOpen, setAlertModalOpen] = useState(false);
   const [alertCommodity, setAlertCommodity] = useState('Rice');
 
-  useEffect(() => {
-    fetchCommodities();
-  }, []);
-
-  useEffect(() => {
-    fetchMarketPrices();
-    if (selectedCommodity && selectedCommodity !== 'all') {
-      fetchPriceTrends();
-    } else {
-      setTrends([]);
-    }
-  }, [selectedCommodity]);
-
-  const fetchMarketPrices = async () => {
+  const fetchMarketPrices = useCallback(async () => {
     setLoading(true);
     try {
       const data = await marketService.getMarketPrices(
@@ -45,9 +32,9 @@ const Market = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCommodity]);
 
-  const fetchCommodities = async () => {
+  const fetchCommodities = useCallback(async () => {
     try {
       const data = await marketService.getCommodities();
       setCommodities(data);
@@ -55,9 +42,9 @@ const Market = () => {
       console.error('Error fetching commodities:', error);
       setCommodities(['Rice', 'Wheat', 'Corn', 'Soybeans', 'Cotton', 'Sugar']);
     }
-  };
+  }, []);
 
-  const fetchPriceTrends = async () => {
+  const fetchPriceTrends = useCallback(async () => {
     try {
       const data = await marketService.getPriceTrends(selectedCommodity);
       setTrends(data);
@@ -65,7 +52,20 @@ const Market = () => {
       console.error('Error fetching price trends:', error);
       setTrends([]);
     }
-  };
+  }, [selectedCommodity]);
+
+  useEffect(() => {
+    fetchMarketPrices();
+    fetchCommodities();
+  }, [fetchMarketPrices, fetchCommodities]);
+
+  useEffect(() => {
+    if (selectedCommodity && selectedCommodity !== 'all') {
+      fetchPriceTrends();
+    } else {
+      setTrends([]);
+    }
+  }, [selectedCommodity, fetchPriceTrends]);
 
   const openAlertModal = (commodity) => {
     const fallbackCommodity =

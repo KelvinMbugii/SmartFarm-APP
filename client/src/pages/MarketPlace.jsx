@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Search, ShoppingCart, Phone, MapPin, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import marketplaceApi, { MARKETPLACE_CATEGORIES } from "@/services/MarketplaceService";
@@ -22,6 +23,9 @@ const formatMoney = (n) =>
     currency: "KES",
     minimumFractionDigits: 0,
   }).format(n || 0);
+
+const mpesaLogo = "/images/Mpesa payment.png";
+const airtelLogo = "/images/airtel payment.jpg";
 
 export default function Marketplace() {
   const { user } = useAuth();
@@ -38,9 +42,10 @@ export default function Marketplace() {
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [placing, setPlacing] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [paymentProvider, setPaymentProvider] = useState("mpesa");
   const [lastPlacedOrderId, setLastPlacedOrderId] = useState(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, limit: 24 };
@@ -59,11 +64,11 @@ export default function Marketplace() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search, category, sellerType, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchProducts();
-  }, [page, category, sellerType]);
+  }, [fetchProducts]);
 
   const handleSearch = (e) => {
     e?.preventDefault();
@@ -177,18 +182,18 @@ export default function Marketplace() {
         <p className="text-muted-foreground py-8">Loading products...</p>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {products.map((item) => (
               <Card
                 key={item._id}
-                className="cursor-pointer hover:border-primary/50 transition-colors"
+                className="cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
                 onClick={() => {
                   setSelectedProduct(item);
                   setOrderQuantity(1);
                 }}
               >
                 <CardHeader className="p-0">
-                  <div className="aspect-[4/3] bg-muted rounded-t-xl overflow-hidden">
+                  <div className="h-36 sm:h-40 md:h-44 lg:h-48 bg-muted rounded-t-xl overflow-hidden">
                     <img
                       src={item.images?.[0] || "https://via.placeholder.com/300x200?text=No+Image"}
                       alt={item.name}
@@ -196,22 +201,19 @@ export default function Marketplace() {
                     />
                   </div>
                 </CardHeader>
-                <CardContent className="p-4">
-                  <CardTitle className="text-base truncate">{item.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground truncate mt-1">
+                <CardContent className="p-2 sm:p-3">
+                  <CardTitle className="text-xs sm:text-sm truncate">{item.name}</CardTitle>
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">
                     {item.description || "—"}
                   </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="font-semibold text-primary">
+                  <div className="flex items-center justify-between mt-1 sm:mt-2">
+                    <span className="font-semibold text-primary text-xs sm:text-sm">
                       {formatMoney(item.price)}
                     </span>
-                    <Badge variant="secondary">{item.sellerType}</Badge>
+                    <Badge variant="secondary" className="text-[10px] px-1">{item.sellerType}</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {item.stockQuantity} {item.unit} · {item.location}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Seller: {item.seller?.name || "—"}
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
+                    {item.stockQuantity} {item.unit}
                   </p>
                 </CardContent>
               </Card>
@@ -313,18 +315,49 @@ export default function Marketplace() {
                           variant="outline"
                           onClick={() => initiateMpesa(lastPlacedOrderId)}
                           disabled={paying}
+                          className="flex items-center gap-2"
                         >
-                          {paying ? "Processing..." : "Pay with M-Pesa"}
+                          {paying ? "Processing..." : (
+                            <span className="flex items-center gap-1">
+                              <img 
+                                src={paymentProvider === "mpesa" ? mpesaLogo : airtelLogo} 
+                                alt={paymentProvider === "mpesa" ? "M-Pesa" : "Airtel"} 
+                                className="h-5 w-auto object-contain"
+                              />
+                              Pay with {paymentProvider === "mpesa" ? "M-Pesa" : "Airtel"}
+                            </span>
+                          )}
                         </Button>
                       )}
                     </div>
                     {lastPlacedOrderId && (
-                      <p className="text-xs text-green-600 dark:text-green-400">
-                        Order placed. Click &quot;Pay with M-Pesa&quot; to confirm payment (demo: marks as paid).
-                      </p>
+                      <div className="space-y-2">
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          Order placed. Select payment method and click to confirm payment.
+                        </p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground">Pay with:</span>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPaymentProvider("mpesa")}
+                              className={`p-1 rounded border transition-all ${paymentProvider === "mpesa" ? "border-primary ring-2 ring-primary" : "border-transparent hover:border-muted"}`}
+                            >
+                              <img src={mpesaLogo} alt="M-Pesa" className="h-6 w-auto object-contain" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPaymentProvider("airtel")}
+                              className={`p-1 rounded border transition-all ${paymentProvider === "airtel" ? "border-primary ring-2 ring-primary" : "border-transparent hover:border-muted"}`}
+                            >
+                              <img src={airtelLogo} alt="Airtel Money" className="h-6 w-auto object-contain" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     <p className="text-xs text-muted-foreground">
-                      Add your M-Pesa number in Profile for payments.
+                      Add your M-Pesa or Airtel Money number in Profile for payments.
                     </p>
                   </div>
                 </div>
