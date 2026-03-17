@@ -1,66 +1,69 @@
 // import api from "./api";
 
 // class WeatherService {
-//   async getCurrentWeather(location) {
+//   async getWeather(location) {
+//     if (!location) {
+//       throw new Error("Location is required");
+//     }
+
 //     try {
 //       const { data } = await api.get("/api/weather", {
 //         params: { location },
 //       });
 
-//       return {
-//         temperature: Math.round(data.current.temperature),
-//         condition: data.current.description,
-//         humidity: data.current.humidity,
-//         windSpeed: data.current.windSpeed,
-//         icon: data.current.icon,
-//         location: location || "Current Location",
-//       };
+//       return this.normalizeWeatherData(data, location);
 //     } catch (error) {
 //       console.error("Weather API error:", error);
-//       // Fallback to mock data
-//       return {
+//       return this.getMockWeather(location);
+//     }
+//   }
+
+//   normalizeWeatherData(data, location) {
+//     const dailyForecast = this.groupByDay(data.forecast || []);
+
+//     return {
+//       location: location || "Current Location",
+
+//       current: {
+//         temperature: Math.round(data.current.temperature),
+//         humidity: data.current.humidity,
+//         pressure: data.current.pressure,
+//         windSpeed: data.current.windSpeed,
+//         description: data.current.description,
+//         icon: data.current.icon,
+//       },
+
+//       forecast: dailyForecast,
+//     };
+//   }
+
+//   getMockWeather(location) {
+//     const days = 5;
+
+//     return {
+//       location: location || "Current Location",
+
+//       current: {
 //         temperature: 24,
-//         condition: "Partly cloudy",
 //         humidity: 68,
+//         pressure: 1013,
 //         windSpeed: 12,
+//         description: "Partly cloudy",
 //         icon: "02d",
-//         location: location || "Current Location",
-//       };
-//     }
+//       },
+
+//       forecast: Array.from({ length: days }, (_, i) => ({
+//         date: new Date(Date.now() + i * 86400000).toISOString(),
+//         temperature: Math.round(24 + Math.random() * 10),
+//         humidity: Math.round(65 + Math.random() * 20),
+//         description: "Partly cloudy",
+//         icon: "02d",
+//       })),
+//     };
 //   }
 
-//   async getForecast(location, days = 5) {
-//     try {
-//       const { data } = await api.get("/api/weather", {
-//         params: { location },
-//       });
-
-//       return (
-//         data.forecast?.slice(0, days).map((item) => ({
-//           date: item.date,
-//           temperature: Math.round(item.temperature),
-//           condition: item.description,
-//           humidity: item.humidity,
-//           icon: item.icon,
-//         })) || []
-//       );
-//     } catch (error) {
-//       console.error("Forecast API error:", error);
-//       // Fallback to mock data
-//       return Array(days)
-//         .fill(null)
-//         .map((_, i) => ({
-//           date: new Date(Date.now() + i * 24 * 60 * 60 * 1000).toISOString(),
-//           temperature: 24 + Math.random() * 10,
-//           condition: "Partly cloudy",
-//           humidity: 65 + Math.random() * 20,
-//           icon: "02d",
-//         }));
-//     }
-//   }
-
-//   getWeatherRecommendation(weatherData) {
-//     const { temperature, humidity, windSpeed, condition } = weatherData;
+//   getWeatherRecommendation({ temperature, humidity, windSpeed, description }) {
+//     const condition = description?.toLowerCase() || "";
 
 //     if (temperature > 35) {
 //       return {
@@ -69,42 +72,49 @@
 //           "Extreme heat - Avoid field work during midday. Ensure adequate irrigation.",
 //         icon: "🌡️",
 //       };
-//     } else if (temperature < 5) {
+//     }
+
+//     if (temperature < 5) {
 //       return {
 //         type: "alert",
 //         message: "Frost warning - Protect sensitive crops and livestock.",
 //         icon: "❄️",
 //       };
-//     } else if (humidity > 85) {
+//     }
+
+//     if (humidity > 85) {
 //       return {
 //         type: "info",
 //         message: "High humidity - Monitor crops for fungal diseases.",
 //         icon: "💧",
 //       };
-//     } else if (windSpeed > 20) {
+//     }
+
+//     if (windSpeed > 20) {
 //       return {
 //         type: "warning",
 //         message: "Strong winds - Postpone spraying operations.",
 //         icon: "💨",
 //       };
-//     } else if (condition.includes("rain")) {
+//     }
+
+//     if (condition.includes("rain")) {
 //       return {
 //         type: "info",
 //         message: "Rain expected - Good for irrigation, delay harvesting.",
 //         icon: "🌧️",
 //       };
-//     } else {
-//       return {
-//         type: "success",
-//         message: "Ideal conditions for most agricultural activities.",
-//         icon: "☀️",
-//       };
 //     }
+
+//     return {
+//       type: "success",
+//       message: "Ideal conditions for most agricultural activities.",
+//       icon: "☀️",
+//     };
 //   }
 // }
 
 // export default new WeatherService();
-
 
 import api from "./api";
 
@@ -136,18 +146,100 @@ class WeatherService {
         pressure: data.current.pressure,
         windSpeed: data.current.windSpeed,
         description: data.current.description,
-        icon: data.current.icon,
+        icon: this.normalizeIcon(data.current.icon),
       },
 
-      forecast:
-        data.forecast?.slice(0, 5).map((item) => ({
-          date: item.date,
-          temperature: Math.round(item.temperature),
-          humidity: item.humidity,
-          description: item.description,
-          icon: item.icon,
-        })) || [],
+      forecast: this.groupByDay(data.forecast || []),
     };
+  }
+
+  /**
+   * Group forecast into one entry per day
+   * Prioritizes midday (12:00) data for accuracy
+   */
+  // groupByDay(forecastList) {
+  //   const map = new Map();
+
+  //   forecastList.forEach((item) => {
+  //     const dateObj = new Date(item.date);
+  //     const dayKey = dateObj.toDateString();
+  //     const hour = dateObj.getHours();
+
+  //     // Prefer midday data (12:00)
+  //     if (!map.has(dayKey) || hour === 12) {
+  //       map.set(dayKey, item);
+  //     }
+  //   });
+
+  //   return Array.from(map.values())
+  //     .slice(0, 5)
+  //     .map((item) => ({
+  //       date: item.date,
+  //       temperature: Math.round(item.temperature),
+  //       humidity: item.humidity,
+  //       description: item.description,
+  //       icon: this.normalizeIcon(item.icon),
+  //     }));
+  // }
+
+  groupByDay(forecastList) {
+    const days = {};
+
+    forecastList.forEach((item) => {
+      const dateObj = new Date(item.date);
+      const dayKey = dateObj.toISOString().split("T")[0];
+
+      if (!days[dayKey]) {
+        days[dayKey] = {
+          date: item.date,
+          temps: [],
+          humidity: [],
+          descriptions: {},
+          icons: {},
+        };
+      }
+
+      days[dayKey].temps.push(item.temperature);
+      days[dayKey].humidity.push(item.humidity);
+
+      // count descriptions (to get most frequent)
+      const desc = item.description;
+      days[dayKey].descriptions[desc] =
+        (days[dayKey].descriptions[desc] || 0) + 1;
+
+      // count icons
+      const icon = this.normalizeIcon(item.icon);
+      days[dayKey].icons[icon] = (days[dayKey].icons[icon] || 0) + 1;
+    });
+
+    return Object.values(days)
+      .slice(0, 5)
+      .map((day) => {
+        const avg = (arr) =>
+          Math.round(arr.reduce((a, b) => a + b, 0) / arr.length);
+
+        const mostFrequent = (obj) =>
+          Object.entries(obj).sort((a, b) => b[1] - a[1])[0][0];
+
+        return {
+          date: day.date,
+          temperature: avg(day.temps), // or use min/max separately
+          minTemp: Math.min(...day.temps),
+          maxTemp: Math.max(...day.temps),
+          humidity: avg(day.humidity),
+          description: mostFrequent(day.descriptions),
+          icon: mostFrequent(day.icons),
+        };
+      });
+  }
+
+  
+  /**
+   * Normalize icon (handle night icons like 01n → 01d)
+   */
+  normalizeIcon(icon) {
+    if (!icon) return "02d";
+    return icon.replace("n", "d");
   }
 
   getMockWeather(location) {

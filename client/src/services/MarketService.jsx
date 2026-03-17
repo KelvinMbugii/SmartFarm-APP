@@ -259,8 +259,6 @@
 
 // export default new MarketService();
 
-
-
 import api from "./api";
 
 class MarketService {
@@ -319,6 +317,25 @@ class MarketService {
         "Sorghum",
       ];
     }
+  }
+
+  async createPriceAlert(commodity, targetPrice, condition, options = {}) {
+    const payload = {
+      commodity,
+      targetPrice,
+      condition,
+      email: options.email || "",
+      sms: Boolean(options.sms),
+      phone: options.phone || "",
+    };
+
+    const response = await api.post("/api/market/alerts", payload);
+    return response.data;
+  }
+
+  async getPriceAlerts() {
+    const response = await api.get("/api/market/alerts");
+    return Array.isArray(response.data) ? response.data : [];
   }
 
   // Mock data for frontend demo/fallback

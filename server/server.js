@@ -22,6 +22,7 @@ const marketplaceRoutes = require("./routes/marketplace");
 const aiRoutes = require("./routes/ai");
 const officerRoutes = require("./routes/officers");
 const adminRoutes = require("./routes/admin");
+const notificationRoutes = require("./routes/notification");
 
 // Import socket handlers
 const chatHandler = require("./socket/chatHandler");
@@ -130,6 +131,7 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/officers", officerRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Gracefully shutdown
 process.on("SIGINT", async () => {

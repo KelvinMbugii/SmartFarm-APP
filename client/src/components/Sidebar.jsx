@@ -166,7 +166,15 @@ const Sidebar = () => {
       },
       {
         title: "Insights",
-        links: [{ name: "Weather Advisory", icon: CloudSun, href: "/weather" }],
+        links: [
+          { name: "Weather Advisory", icon: CloudSun, href: "/weather" },
+          {
+            name: "Notifications",
+            icon: MessageCircle,
+            href: "/notifications",
+          },
+        ],
+        
       },
       {
         title: "Settings",
