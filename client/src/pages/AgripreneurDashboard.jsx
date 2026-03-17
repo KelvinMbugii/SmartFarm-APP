@@ -29,8 +29,10 @@ import {
   Trash2,
   X,
   Truck,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
 import ConsultationRoom from "@/components/ConsultationRoom";
 import marketplaceApi, {
   MARKETPLACE_CATEGORIES,
@@ -246,17 +248,23 @@ export default function AgripreneurDashboard() {
       <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Products
+            </CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">Listed in marketplace</p>
+            <p className="text-xs text-muted-foreground">
+              Listed in marketplace
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders Received</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Orders Received
+            </CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -266,7 +274,9 @@ export default function AgripreneurDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pending Orders
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -281,7 +291,9 @@ export default function AgripreneurDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.completedOrders}</div>
-            <p className="text-xs text-muted-foreground">Delivered / completed</p>
+            <p className="text-xs text-muted-foreground">
+              Delivered / completed
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -290,7 +302,9 @@ export default function AgripreneurDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatMoney(stats.totalRevenue)}</div>
+            <div className="text-2xl font-bold">
+              {formatMoney(stats.totalRevenue)}
+            </div>
             <p className="text-xs text-muted-foreground">Paid orders</p>
           </CardContent>
         </Card>
@@ -314,7 +328,8 @@ export default function AgripreneurDashboard() {
           <CardContent>
             {products.length === 0 ? (
               <p className="text-muted-foreground py-4">
-                No products yet. Add your first product to appear in the marketplace.
+                No products yet. Add your first product to appear in the
+                marketplace.
               </p>
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4 max-h-[440px] overflow-y-auto">
@@ -407,30 +422,42 @@ export default function AgripreneurDashboard() {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium">
-                          {o.buyer?.name || "Buyer"} · {formatMoney(o.totalAmount)}
+                          {o.buyer?.name || "Buyer"} ·{" "}
+                          {formatMoney(o.totalAmount)}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {o.items?.map((i) => `${i.productName || i.product?.name} x ${i.quantity}`).join(", ")}
+                          {o.items
+                            ?.map(
+                              (i) =>
+                                `${i.productName || i.product?.name} x ${i.quantity}`,
+                            )
+                            .join(", ")}
                         </p>
-                        <p className="text-xs">Contact: {o.buyer?.Phone || o.buyerPhone || "—"}</p>
+                        <p className="text-xs">
+                          Contact: {o.buyer?.Phone || o.buyerPhone || "—"}
+                        </p>
                       </div>
                       <Badge
-                        variant={o.status === "pending" ? "secondary" : "default"}
+                        variant={
+                          o.status === "pending" ? "secondary" : "default"
+                        }
                       >
                         {o.status}
                       </Badge>
                     </div>
                     <div className="flex gap-2 flex-wrap">
-                      {ORDER_STATUSES.filter((s) => s !== o.status).map((status) => (
-                        <Button
-                          key={status}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateOrderStatus(o._id, status)}
-                        >
-                          Mark {status}
-                        </Button>
-                      ))}
+                      {ORDER_STATUSES.filter((s) => s !== o.status).map(
+                        (status) => (
+                          <Button
+                            key={status}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateOrderStatus(o._id, status)}
+                          >
+                            Mark {status}
+                          </Button>
+                        ),
+                      )}
                     </div>
                   </div>
                 ))}
@@ -445,12 +472,18 @@ export default function AgripreneurDashboard() {
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-3">
+        <CardContent className="flex flex-wrap gap-3">
           <Button variant="outline" onClick={() => setShowConsultation(true)}>
             Start Consultation
           </Button>
           <Button variant="outline" onClick={openAddProduct}>
             Add Product
+          </Button>
+          <Button asChild variant="outline" className="gap-2">
+            <Link to="/chat">
+              <MessageCircle className="h-4 w-4" />
+              Open Chat Center
+            </Link>
           </Button>
         </CardContent>
       </Card>
@@ -460,8 +493,14 @@ export default function AgripreneurDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{productModal === "add" ? "Add Product" : "Edit Product"}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setProductModal(null)}>
+              <CardTitle>
+                {productModal === "add" ? "Add Product" : "Edit Product"}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setProductModal(null)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </CardHeader>
@@ -470,7 +509,9 @@ export default function AgripreneurDashboard() {
                 <Label>Product name</Label>
                 <Input
                   value={productForm.name}
-                  onChange={(e) => setProductForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) =>
+                    setProductForm((f) => ({ ...f, name: e.target.value }))
+                  }
                   placeholder="e.g. Hybrid Maize Seeds"
                 />
               </div>
@@ -516,7 +557,9 @@ export default function AgripreneurDashboard() {
                 <Label>Category</Label>
                 <Select
                   value={productForm.category}
-                  onValueChange={(v) => setProductForm((f) => ({ ...f, category: v }))}
+                  onValueChange={(v) =>
+                    setProductForm((f) => ({ ...f, category: v }))
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
@@ -534,7 +577,12 @@ export default function AgripreneurDashboard() {
                 <Label>Description</Label>
                 <Textarea
                   value={productForm.description}
-                  onChange={(e) => setProductForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setProductForm((f) => ({
+                      ...f,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Brief description"
                   rows={2}
                 />
@@ -546,7 +594,9 @@ export default function AgripreneurDashboard() {
                     type="number"
                     min={0}
                     value={productForm.price}
-                    onChange={(e) => setProductForm((f) => ({ ...f, price: e.target.value }))}
+                    onChange={(e) =>
+                      setProductForm((f) => ({ ...f, price: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
@@ -556,7 +606,10 @@ export default function AgripreneurDashboard() {
                     min={0}
                     value={productForm.stockQuantity}
                     onChange={(e) =>
-                      setProductForm((f) => ({ ...f, stockQuantity: e.target.value }))
+                      setProductForm((f) => ({
+                        ...f,
+                        stockQuantity: e.target.value,
+                      }))
                     }
                   />
                 </div>
@@ -566,7 +619,9 @@ export default function AgripreneurDashboard() {
                   <Label>Unit</Label>
                   <Input
                     value={productForm.unit}
-                    onChange={(e) => setProductForm((f) => ({ ...f, unit: e.target.value }))}
+                    onChange={(e) =>
+                      setProductForm((f) => ({ ...f, unit: e.target.value }))
+                    }
                     placeholder="kg, bag, litre"
                   />
                 </div>
@@ -574,7 +629,12 @@ export default function AgripreneurDashboard() {
                   <Label>Location</Label>
                   <Input
                     value={productForm.location}
-                    onChange={(e) => setProductForm((f) => ({ ...f, location: e.target.value }))}
+                    onChange={(e) =>
+                      setProductForm((f) => ({
+                        ...f,
+                        location: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
@@ -584,7 +644,10 @@ export default function AgripreneurDashboard() {
                   id="out"
                   checked={productForm.isOutOfStock}
                   onChange={(e) =>
-                    setProductForm((f) => ({ ...f, isOutOfStock: e.target.checked }))
+                    setProductForm((f) => ({
+                      ...f,
+                      isOutOfStock: e.target.checked,
+                    }))
                   }
                 />
                 <Label htmlFor="out">Mark as out of stock</Label>

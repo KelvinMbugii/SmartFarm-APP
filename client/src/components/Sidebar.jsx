@@ -123,13 +123,18 @@ const Sidebar = () => {
           {
             name: "Customer Messages",
             icon: MessageCircle,
-            href: "/customer-messages",
+            href: "/chat",
           },
         ],
       },
       {
         title: "Settings",
         links: [
+          {
+            name: "Notifications",
+            icon: MessageCircle,
+            href: "/notifications",
+          },
           { name: "Profile & Payments", icon: User, href: "/profile" },
           {
             name: "Payment Methods",
@@ -174,7 +179,6 @@ const Sidebar = () => {
             href: "/notifications",
           },
         ],
-        
       },
       {
         title: "Settings",

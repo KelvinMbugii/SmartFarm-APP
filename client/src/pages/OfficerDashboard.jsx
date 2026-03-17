@@ -40,8 +40,8 @@ const quickActions = [
     icon: BookOpen,
   },
   {
-    title: "Farmer Support Chat",
-    description: "Respond quickly to farmer messages.",
+    title: "Chat Center",
+    description: "Open the chat center to respond to farmer messages.",
     href: "/chat",
     icon: LifeBuoy,
   },
