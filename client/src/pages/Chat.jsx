@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { MessageCircle, Send, Search, ImagePlus } from "lucide-react";
+import { MessageCircle, Send, Search, Plus } from "lucide-react";
 
 import {
   decryptMessage,
@@ -409,29 +409,29 @@ const Chat = () => {
             </div>
 
             {/* Input Bar */}
-            <div className="shrink-0 flex items-center gap-2 p-3 bg-[#f0f2f5] dark:bg-[#202c33]">
+            <div className="shrink-0 flex items-center gap-2 p-3 bg-[#f0f2f5] dark:bg-[#202c33] w-full">
               <input
                 ref={imageRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*,application/*"
                 className="hidden"
                 onChange={handleImageUpload}
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5"
+                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5 h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-colors"
                 onClick={() => imageRef.current?.click()}
-                title="Upload image"
+                title="Attach file"
               >
-                <ImagePlus className="h-[22px] w-[22px]" />
+                <Plus className="h-[24px] w-[24px]" />
               </Button>
-              <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center shadow-sm">
+              <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center shadow-sm min-w-0 border-transparent focus-within:border-zinc-300 transition-all">
                 <Input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type a message"
-                  className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-[42px] px-4 text-[#111b21] dark:text-[#e9edef] placeholder:text-[#54656f] dark:placeholder:text-[#8696a0]"
+                  className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-[44px] px-4 text-[15.5px] text-[#111b21] dark:text-[#e9edef] placeholder:text-[#54656f] dark:placeholder:text-[#8696a0]"
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
               </div>
