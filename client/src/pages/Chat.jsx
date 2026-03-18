@@ -279,12 +279,12 @@ const Chat = () => {
           />
         </div>
 
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="flex-1 min-h-0 flex flex-col">
+          <CardHeader className="pb-2 shrink-0">
             <CardTitle>Online Users</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <ScrollArea className="h-64">
+          <CardContent className="space-y-3 flex-1 min-h-0 flex flex-col pb-4">
+            <ScrollArea className="flex-1">
               <div className="space-y-2 pr-2">
                 {onlineUserList.map((u) => {
                   const userId = getEntityId(u);
@@ -336,143 +336,121 @@ const Chat = () => {
           </CardContent>
         </Card>
 
-        <Card className="flex-1 min-h-0">
-          <CardHeader className="pb-2">
-            <CardTitle>Past Chats</CardTitle>
-          </CardHeader>
-          <CardContent className="h-full pb-3">
-            <ScrollArea className="h-full">
-              <div className="space-y-2 pr-2">
-                {chats.map((chat) => {
-                  const chatEntityId = getEntityId(chat);
-                  const isActive =
-                    String(chatEntityId) === String(getEntityId(activeChat));
-                  const chatUser = chat?.participants?.find(
-                    (participant) =>
-                      String(getEntityId(participant)) !==
-                      String(getEntityId(user)),
-                  );
-
-                  return (
-                    <button
-                      type="button"
-                      key={chatEntityId}
-                      className={`w-full p-2 rounded text-left border ${
-                        isActive
-                          ? "border-primary bg-primary/10"
-                          : "border-transparent hover:bg-muted"
-                      }`}
-                      onClick={() => openChat(chat)}
-                    >
-                      <p className="font-medium truncate">
-                        {chatUser?.name || "Unknown user"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {chatUser?.role || "user"}
-                      </p>
-                    </button>
-                  );
-                })}
-                {chats.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-6">
-                    No past chats yet.
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Card className="flex-1 flex flex-col min-h-0">
-          {activeChat ? (
-            <>
-              <CardHeader className="border-b">
-                <CardTitle>{otherUser?.name || "Conversation"}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Role: {otherUser?.role || "user"}
-                </p>
-              </CardHeader>
-
-              <CardContent className="flex-1 overflow-y-auto py-4">
-                <div className="space-y-3">
-                  {messages.map((msg, i) => {
-                    const senderId = getEntityId(msg.sender) || msg.sender;
-                    const isOwn =
-                      String(senderId) === String(getEntityId(user));
-
-                    return (
-                      <div
-                        key={getEntityId(msg) || i}
-                        className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[70%] rounded-2xl px-3 py-2 ${
-                            isOwn
-                              ? "bg-blue-600 text-white rounded-br-sm"
-                              : "bg-emerald-100 text-emerald-950 rounded-bl-sm"
-                          }`}
-                        >
-                          {msg.text && (
-                            <p className="text-sm break-words">{msg.text}</p>
-                          )}
-                          {msg.imageMeta?.fileUrl && (
-                            <img
-                              src={resolveFileUrl(msg.imageMeta.fileUrl)}
-                              alt={msg.imageMeta.name || "Uploaded image"}
-                              className="mt-2 rounded-lg max-h-60 w-auto"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div ref={messagesEndRef} />
-              </CardContent>
-
-              <div className="flex gap-2 p-3 border-t">
-                <input
-                  ref={imageRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageUpload}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => imageRef.current?.click()}
-                  title="Upload image"
-                >
-                  <ImagePlus className="h-4 w-4" />
-                </Button>
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                />
-                <Button
-                  onClick={() => sendMessage()}
-                  disabled={!newMessage.trim()}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center space-y-2">
-                <MessageCircle className="h-10 w-10 text-muted-foreground mx-auto" />
-                <p className="text-sm text-muted-foreground">
-                  Select an online user and start chatting.
+      {/* Right Side - WhatsApp Style Chat */}
+      <div className="flex-1 flex flex-col min-w-0 border-l border-border bg-[#efeae2] dark:bg-[#0b141a] rounded-r-lg overflow-hidden">
+        {activeChat ? (
+          <>
+            {/* Header */}
+            <div className="h-16 shrink-0 flex items-center px-4 bg-[#f0f2f5] dark:bg-[#202c33] border-b shadow-sm z-10 gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={otherUser?.avatar} />
+                <AvatarFallback className="bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                  {otherUser?.name?.[0] || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground truncate">
+                  {otherUser?.name || "Conversation"}
+                </h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  {otherUser?.role ? `Role: ${otherUser.role}` : "user"}
                 </p>
               </div>
             </div>
-          )}
-        </Card>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-0">
+              {messages.map((msg, i) => {
+                const senderId = getEntityId(msg.sender) || msg.sender;
+                const isOwn = String(senderId) === String(getEntityId(user));
+
+                return (
+                  <div
+                    key={getEntityId(msg) || i}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[70%] px-3 py-2 shadow-sm relative ${
+                        isOwn
+                          ? "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-lg rounded-tr-none"
+                          : "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-lg rounded-tl-none"
+                      }`}
+                    >
+                      {/* Tail styling */}
+                      {isOwn ? (
+                        <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -right-[7px] text-[#d9fdd3] dark:text-[#005c4b] fill-current">
+                          <path d="M5.188 1H0v11.156l4.484-4.805A4.5 4.5 0 015.188 1z" />
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 8 13" width="8" height="13" className="absolute top-0 -left-[7px] text-white dark:text-[#202c33] fill-current">
+                          <path d="M1.533 3.568L8 12.193V1H2.812C1.042 1 .474 2.026 1.533 3.568z" />
+                        </svg>
+                      )}
+
+                      {msg.text && (
+                        <p className="text-[14.5px] leading-relaxed break-words whitespace-pre-wrap relative z-10">
+                          {msg.text}
+                        </p>
+                      )}
+                      {msg.imageMeta?.fileUrl && (
+                        <img
+                          src={resolveFileUrl(msg.imageMeta.fileUrl)}
+                          alt={msg.imageMeta.name || "Uploaded image"}
+                          className="mt-1 rounded-md max-h-60 w-auto relative z-10"
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Bar */}
+            <div className="shrink-0 flex items-center gap-2 p-3 bg-[#f0f2f5] dark:bg-[#202c33]">
+              <input
+                ref={imageRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5"
+                onClick={() => imageRef.current?.click()}
+                title="Upload image"
+              >
+                <ImagePlus className="h-[22px] w-[22px]" />
+              </Button>
+              <div className="flex-1 bg-white dark:bg-[#2a3942] rounded-lg flex items-center shadow-sm">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type a message"
+                  className="flex-1 border-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent h-[42px] px-4 text-[#111b21] dark:text-[#e9edef] placeholder:text-[#54656f] dark:placeholder:text-[#8696a0]"
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50"
+                onClick={() => sendMessage()}
+                disabled={!newMessage.trim()}
+              >
+                <Send className="h-[20px] w-[20px]" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 bg-[#f0f2f5] dark:bg-[#222e35] flex flex-col items-center justify-center p-8 border-b-8 border-green-500">
+            {/* Empty state replacing placeholder text */}
+          </div>
+        )}
       </div>
     </div>
   );
