@@ -79,7 +79,7 @@ const Landing = () => {
               <div className="bg-white/15 rounded-full p-2">
                 <Tractor className="h-8 w-8 text-secondary" />
               </div>
-              <span className="text-xl font-bold font-heading text-white">SmartFarm Hub</span>
+              <span className="text-xl font-bold font-heading text-white">SmartFarm</span>
             </div>
             
             {/* Desktop Navigation */}
