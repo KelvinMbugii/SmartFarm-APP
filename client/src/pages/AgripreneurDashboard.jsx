@@ -33,7 +33,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import ConsultationRoom from "@/components/ConsultationRoom";
 import marketplaceApi, {
   MARKETPLACE_CATEGORIES,
   ORDER_STATUSES,
@@ -49,7 +48,6 @@ const formatMoney = (n) =>
 
 export default function AgripreneurDashboard() {
   const { user } = useAuth();
-  const [showConsultation, setShowConsultation] = useState(false);
   const [stats, setStats] = useState({
     totalProducts: 0,
     ordersReceived: 0,
@@ -473,9 +471,6 @@ export default function AgripreneurDashboard() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3">
-          <Button variant="outline" onClick={() => setShowConsultation(true)}>
-            Start Consultation
-          </Button>
           <Button variant="outline" onClick={openAddProduct}>
             Add Product
           </Button>
@@ -665,12 +660,6 @@ export default function AgripreneurDashboard() {
         </div>
       )}
 
-      {showConsultation && (
-        <ConsultationRoom
-          userProfile={user}
-          onClose={() => setShowConsultation(false)}
-        />
-      )}
     </div>
   );
 }
