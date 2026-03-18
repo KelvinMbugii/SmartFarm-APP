@@ -38,6 +38,7 @@ import marketplaceApi, {
   ORDER_STATUSES,
 } from "@/services/MarketplaceService";
 import { toast } from "sonner";
+import agripreneurDashboardImage from "@/assets/agriprenuer-dashboard-image.png";
 
 const formatMoney = (n) =>
   new Intl.NumberFormat("en-KE", {
@@ -240,6 +241,14 @@ export default function AgripreneurDashboard() {
         <p className="text-muted-foreground">
           Welcome back, {displayName}. Manage your products and orders.
         </p>
+      </div>
+
+      <div className="w-full rounded-[20px] overflow-hidden shadow-lg mb-8">
+        <img
+          src={agripreneurDashboardImage}
+          alt="Agripreneur Dashboard"
+          className="w-full h-48 md:h-64 object-cover"
+        />
       </div>
 
       {/* Overview stats */}

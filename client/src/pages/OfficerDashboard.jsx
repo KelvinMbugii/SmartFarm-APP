@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router-dom";
 import officerService from "@/services/OfficerService";
 import { toast } from "sonner";
+import officerDashboardImage from "@/assets/agricultural-officer-dashboard.png";
 
 const quickActions = [
   {
@@ -141,6 +142,14 @@ export default function OfficerDashboard() {
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </Button>
+      </div>
+
+      <div className="w-full rounded-[20px] overflow-hidden shadow-lg">
+        <img
+          src={officerDashboardImage}
+          alt="Officer Dashboard"
+          className="w-full h-48 md:h-64 object-cover"
+        />
       </div>
 
       {error ? (

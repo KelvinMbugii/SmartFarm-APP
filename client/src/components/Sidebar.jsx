@@ -6,7 +6,6 @@ import {
   Calendar,
   MessageCircle,
   TrendingUp,
-  LogOut,
   CloudSun,
   ShoppingCart,
   BarChart3,
@@ -18,8 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-
-/* ---------------------------------- Utils --------------------------------- */
+import logoImage from "@/assets/logo.jpeg";
 
 const getRoleHomePath = (role) => {
   switch (role) {
@@ -38,14 +36,10 @@ const getRoleHomePath = (role) => {
 
 const isAdminLinkActive = (location, href) => {
   const [pathname, query = ""] = href.split("?");
-
   if (location.pathname !== pathname) return false;
   if (!query) return location.search === "";
-
   return location.search === `?${query}`;
 };
-
-/* ---------------------------------- Menus --------------------------------- */
 
 const roleMenus = (role) => ({
   farmer: [
@@ -217,32 +211,41 @@ const roleMenus = (role) => ({
   ],
 });
 
-/* -------------------------------- Component ------------------------------- */
-
-const Sidebar = () => {
+const Sidebar = ({ onLinkClick }) => {
   const { user } = useAuth();
   const location = useLocation();
 
   const role = (user?.role || "default").toLowerCase();
   const sections = roleMenus(role)[role] || [];
 
+  const handleNavClick = () => {
+    if (onLinkClick) {
+      onLinkClick();
+    }
+  };
+
   return (
-    <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-100 dark:border-gray-800">
-        <h1 className="text-xl font-bold text-brand dark:text-green-400">
-          SmartFarm
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+    <aside className="w-64 h-screen bg-[#1B4332] flex flex-col shadow-xl">
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center gap-3 mb-2">
+          <img
+            src={logoImage}
+            alt="SmartFarm Logo"
+            className="w-12 h-12 rounded-xl object-cover shadow-md"
+          />
+          <h1 className="text-2xl font-bold text-white font-heading tracking-wide">
+            SmartFarm
+          </h1>
+        </div>
+        <p className="text-sm text-white/60 capitalize font-body">
           {role} Portal
         </p>
       </div>
 
-      {/* Navigation */}
-      <nav className="mt-4 flex-1 overflow-y-auto">
+      <nav className="mt-4 flex-1 overflow-y-auto px-4">
         {sections.map((section) => (
           <div key={section.title} className="mb-6">
-            <h3 className="px-6 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-2">
+            <h3 className="px-3 text-xs font-semibold text-white/40 uppercase mb-3 tracking-wider font-heading">
               {section.title}
             </h3>
 
@@ -251,6 +254,7 @@ const Sidebar = () => {
                 <li key={name}>
                   <NavLink
                     to={href}
+                    onClick={handleNavClick}
                     className={({ isActive }) => {
                       const active =
                         role === "admin" && href.startsWith("/IT-dashboard")
@@ -258,15 +262,19 @@ const Sidebar = () => {
                           : isActive;
 
                       return cn(
-                        "flex items-center gap-3 px-6 py-2 rounded-md text-sm font-medium transition-colors",
+                        "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all",
                         active
-                          ? "bg-green-100 dark:bg-green-900/30 text-brand dark:text-green-300"
-                          : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-brand dark:hover:text-green-300",
+                          ? "bg-[#E9B44C] text-[#1B4332] rounded-full font-semibold"
+                          : "text-white/80 hover:bg-white/10 hover:text-white rounded-lg",
                       );
                     }}
                   >
-                    <Icon className="h-5 w-5" />
-                    {name}
+                    <span className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full bg-white/10",
+                    )}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="font-body">{name}</span>
                   </NavLink>
                 </li>
               ))}

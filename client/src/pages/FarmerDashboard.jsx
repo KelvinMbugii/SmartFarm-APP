@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 //import ConsultationRoom from "@/components/ConsultationRoom";
 import marketplaceApi from "@/services/MarketplaceService";
 import { toast } from "sonner";
+import farmerDashboardImage from "@/assets/farmer-dashboard-image.png";
 
 const MOCK_MY_LISTINGS = [
   { _id: "m1", name: "Fresh Tomatoes", stockQuantity: 50, isOutOfStock: false },
@@ -88,6 +89,14 @@ export default function FarmerDashboard() {
             Sell Produce
           </Button>
         </div>
+      </div>
+
+      <div className="w-full rounded-[20px] overflow-hidden shadow-lg">
+        <img
+          src={farmerDashboardImage}
+          alt="Farmer Dashboard"
+          className="w-full h-48 md:h-64 object-cover"
+        />
       </div>
 
       {/* Quick Stats */}
