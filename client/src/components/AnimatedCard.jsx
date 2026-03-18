@@ -1,5 +1,6 @@
 import React from "react";
 import { motion as Motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const AnimatedCard = ({
   children,
@@ -20,7 +21,7 @@ const AnimatedCard = ({
       y: 0,
       scale: 1,
       transition: {
-        duration: 0.5,
+        duration: 0.3,
         delay,
         ease: "easeOut",
       },
@@ -30,9 +31,9 @@ const AnimatedCard = ({
   const hoverVariants = hover
     ? {
         hover: {
-          y: -5,
+          y: -4,
           scale: 1.02,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.15)",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
           transition: {
             duration: 0.3,
             ease: "easeInOut",
@@ -43,14 +44,17 @@ const AnimatedCard = ({
 
   return (
     <Motion.div
-      className={`stat-card ${className}`}
+      className={cn(
+        "bg-card rounded-lg p-4 card-shadow",
+        className
+      )}
       variants={cardVariants}
-      whileHover="hover"
+      whileHover={hover ? "hover" : undefined}
       initial="hidden"
       animate="visible"
       onClick={onClick}
       style={{ cursor: onClick ? "pointer" : "default" }}
-      {...hoverVariants}
+      {...(hover ? { whileHover: "hover" } : {})}
       {...props}
     >
       {children}

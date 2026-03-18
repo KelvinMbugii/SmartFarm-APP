@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Tractor, Mail, Lock, Phone, User, MapPin, Wheat, Settings, Eye, EyeOff} from "lucide-react";
+import { Tractor, Mail, Lock, Phone, User, MapPin, Wheat, Settings, Eye, EyeOff, ShieldCheck, BarChart3, Leaf, ArrowLeft} from "lucide-react";
 import { toast } from "sonner";
+
+const farmersCollabImage = "/images/farmers collaborating.jpeg";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -127,21 +129,96 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-agricultural-50 to-agricultural-100 p-6">
-      <Card className="w-full max-w-lg shadow-2xl border-0 bg-gradient-to-b from-white to-agricultural-50/30 backdrop-blur-sm">
-        <CardHeader className="text-center pb-6">
-          <div className="flex justify-center mb-6">
-            <div className="bg-agricultural-100 rounded-full p-4 shadow-lg">
-              <Tractor className="h-10 w-10 text-agricultural-600" />
+    <div className="min-h-screen grid lg:grid-cols-2 bg-background p-4 lg:p-8 gap-6">
+      {/* Left Info Panel with Image */}
+      <div className="hidden lg:flex flex-col justify-center rounded-3xl p-10 relative overflow-hidden shadow-2xl">
+        <img 
+          src={farmersCollabImage} 
+          alt="Farmers collaborating" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-primary/85" />
+        <div className="relative z-10 flex flex-col h-full justify-between">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="bg-white/15 rounded-full p-3">
+              <Tractor className="h-10 w-10" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold font-heading text-white">SmartFarm Hub</h1>
+              <p className="text-secondary/80">
+                Agri-Clinic style connected farming platform
+              </p>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold mb-2 text-agricultural-900 tracking-tight">
-            Join SmartFarm
-          </CardTitle>
-          <CardDescription className="text-agricultural-600 text-base">
-            Create your account to get started
-          </CardDescription>
-        </CardHeader>
+
+          <div className="space-y-6">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="h-6 w-6 mt-1" />
+              <div>
+                <h2 className="font-semibold text-lg font-heading text-white">Join Our Community</h2>
+                <p className="text-white/80 text-sm font-body">
+                  Connect with thousands of farmers, agripreneurs, and agricultural experts.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <BarChart3 className="h-6 w-6 mt-1" />
+              <div>
+                <h2 className="font-semibold text-lg font-heading text-white">Grow Your Business</h2>
+                <p className="text-white/80 text-sm font-body">
+                  Access real-time market prices, weather insights, and expert consultations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Leaf className="h-6 w-6 mt-1" />
+              <div>
+                <h2 className="font-semibold text-lg font-heading text-white">Smart Farming</h2>
+                <p className="text-white/80 text-sm font-body">
+                  Leverage AI-powered disease detection and smart farming tools.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-white/20">
+            <p className="text-white/70 text-sm font-body">
+              Join SmartFarm today and transform your agricultural journey.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Registration Card */}
+      <div className="flex items-center justify-center">
+        <div className="animated-border">
+          <div className="card-inner">
+            <Card className="w-full max-w-lg shadow-2xl border-0 bg-card backdrop-blur-sm">
+              <CardHeader className="text-center pb-6">
+                <div className="flex justify-start mb-2">
+                  <Link
+                    to="/"
+                    className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    <span className="text-sm font-medium">Back to Home</span>
+                  </Link>
+                </div>
+
+                <div className="flex justify-center mb-6">
+                  <div className="bg-secondary/20 rounded-full p-4 shadow-lg lg:hidden">
+                    <Tractor className="h-10 w-10 text-primary" />
+                  </div>
+                </div>
+                <CardTitle className="text-3xl font-bold mb-2 font-heading text-foreground tracking-tight">
+              Join SmartFarm
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-base font-body">
+              Create your account to get started
+            </CardDescription>
+          </CardHeader>
 
         <CardContent className="space-y-6">
           {error && (
@@ -155,12 +232,12 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="name"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Full Name
               </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="name"
                   name="name"
@@ -170,7 +247,7 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="name"
-                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                  className="pl-12 h-12 bg-background/80 border-input focus:border-primary"
                 />
               </div>
             </div>
@@ -179,12 +256,12 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Email
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
                   name="email"
@@ -194,7 +271,7 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="email"
-                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                  className="pl-12 h-12 bg-background/80 border-input focus:border-primary"
                 />
               </div>
             </div>
@@ -203,12 +280,12 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Password
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
                   name="password"
@@ -218,12 +295,12 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="new-password"
-                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                  className="pl-12 h-12 bg-background/80 border-input focus:border-primary"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-agricultural-500 hover:text-agricultural-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
                   aria-label={showPassword ? "Hide Password" : "Show password"}
                 >
                   {showPassword ? (
@@ -239,7 +316,7 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="role"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Role
               </Label>
@@ -249,7 +326,7 @@ const Register = () => {
                 value={formData.role}
                 onChange={handleChange}
                 required
-                className="w-full h-12 rounded-md border border-agricultural-200 bg-white/80 px-3 text-agricultural-900 focus:border-agricultural-400 focus:ring-2 focus:ring-agricultural-400 focus:outline-none"
+                className="w-full h-12 rounded-lg border-2 border-input bg-background px-3 text-foreground focus:border-primary focus:ring-0 focus:outline-none font-body"
               >
                 <option value="">Select Role</option>
                 <option value="farmer">Farmer</option>
@@ -262,12 +339,12 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="location"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Location
               </Label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="location"
                   name="location"
@@ -277,7 +354,7 @@ const Register = () => {
                   onChange={handleChange}
                   required
                   autoComplete="address-level1"
-                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                  className="pl-12 h-12 bg-background/80 border-input focus:border-primary"
                 />
               </div>
             </div>
@@ -286,12 +363,12 @@ const Register = () => {
             <div className="space-y-2">
               <Label
                 htmlFor="phone"
-                className="text-agricultural-700 font-medium"
+                className="text-foreground font-medium font-heading"
               >
                 Phone Number
               </Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-agricultural-400" />
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="phone"
                   name="phone"
@@ -303,15 +380,15 @@ const Register = () => {
                   pattern="^\+?[- 0-9 ()]{7,}$"
                   title="Please enter a valid phone number"
                   autoComplete="tel"
-                  className="pl-12 h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                  className="pl-12 h-12 bg-background/80 border-input focus:border-primary"
                 />
               </div>
             </div>
 
             {/* Farmer-specific fields */}
             {formData.role === "farmer" && (
-              <div className="space-y-5 pt-4 border-t border-agricultural-200">
-                <div className="flex items-center gap-2 text-agricultural-700 font-semibold">
+              <div className="space-y-5 pt-4 border-t border-border">
+                <div className="flex items-center gap-2 text-primary font-semibold font-heading">
                   <Wheat className="h-5 w-5" />
                   <span>Farm Details</span>
                 </div>
@@ -319,7 +396,7 @@ const Register = () => {
                 <div className="space-y-2">
                   <Label
                     htmlFor="farmSize"
-                    className="text-agricultural-700 font-medium"
+                    className="text-foreground font-medium font-heading"
                   >
                     Farm Size
                   </Label>
@@ -331,14 +408,14 @@ const Register = () => {
                     value={formData.farmSize}
                     onChange={handleChange}
                     required
-                    className="h-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400"
+                    className="h-12 bg-background/80 border-input focus:border-primary"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label
                     htmlFor="crops"
-                    className="text-agricultural-700 font-medium"
+                    className="text-foreground font-medium font-heading"
                   >
                     Crops (comma-separated)
                   </Label>
@@ -350,19 +427,19 @@ const Register = () => {
                     onChange={handleChange}
                     rows={3}
                     required
-                    className="bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400 resize-none"
+                    className="bg-background/80 border-input focus:border-primary resize-none font-body"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label
                     htmlFor="equipment"
-                    className="text-agricultural-700 font-medium"
+                    className="text-foreground font-medium font-heading"
                   >
                     Equipment (comma-separated)
                   </Label>
                   <div className="relative">
-                    <Settings className="absolute left-3 top-3 h-5 w-5 text-agricultural-400" />
+                    <Settings className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                     <Textarea
                       id="equipment"
                       name="equipment"
@@ -371,7 +448,7 @@ const Register = () => {
                       onChange={handleChange}
                       rows={3}
                       required
-                      className="pl-12 bg-white/80 border-agricultural-200 focus:border-agricultural-400 focus:ring-agricultural-400 resize-none"
+                      className="pl-12 bg-background/80 border-input focus:border-primary resize-none font-body"
                     />
                   </div>
                 </div>
@@ -380,26 +457,29 @@ const Register = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 bg-agricultural-600 hover:bg-agricultural-700 text-black font-semibold text-base transition-all duration-200 shadow-lg hover:shadow-xl mt-6"
+              className="w-full h-12 bg-accent hover:bg-accent-hover text-white font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 mt-6 font-heading"
               disabled={isLoading || !isFormValid()}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
-          <div className="text-center pt-4 border-t border-agricultural-200">
-            <p className="text-agricultural-600">
+          <div className="text-center pt-4 border-t border-border">
+            <p className="text-muted-foreground font-body">
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="text-agricultural-700 hover:text-agricultural-800 font-semibold hover:underline transition-colors"
+                className="text-primary hover:text-primary font-semibold hover:underline transition-colors"
               >
                 Sign in
               </Link>
             </p>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

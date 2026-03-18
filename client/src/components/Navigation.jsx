@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom"; 
 import  {Home, TrendingUp, CloudSun, ShoppingCart, MessageCircle, BarChart3, Leaf, Users,} from "lucide-react";
 
@@ -6,7 +6,7 @@ const Navigation = () => {
   const location = useLocation(); // Get current location from React Router
   const [activeItem, setActiveItem] = useState("dashboard"); 
 
-  const navItems = [
+  const navItems = useMemo(() => [
     // Add 'path' property that matches your React Router paths
     { id: "dashboard", label: "Dashboard", icon: Home, path: "/dashboard" },
     { id: "marketPrice", label: "Market Prices", icon: TrendingUp, path: "/market" },
@@ -21,7 +21,7 @@ const Navigation = () => {
     //   icon: BarChart3,
     //   path: "/analytics",
     // },
-  ];
+  ], []);
 
   useEffect(() => {
     

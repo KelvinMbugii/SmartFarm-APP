@@ -123,18 +123,13 @@ const Sidebar = () => {
           {
             name: "Customer Messages",
             icon: MessageCircle,
-            href: "/chat",
+            href: "/chart",
           },
         ],
       },
       {
         title: "Settings",
         links: [
-          {
-            name: "Notifications",
-            icon: MessageCircle,
-            href: "/notifications",
-          },
           { name: "Profile & Payments", icon: User, href: "/profile" },
           {
             name: "Payment Methods",
@@ -179,6 +174,7 @@ const Sidebar = () => {
             href: "/notifications",
           },
         ],
+        
       },
       {
         title: "Settings",
@@ -398,7 +394,7 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+      {/* <div className="p-4 border-t border-gray-100 dark:border-gray-800">
         <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg text-sm text-gray-700 dark:text-gray-300">
           <div className="flex items-center gap-2 mb-2">
             <HelpCircle className="h-4 w-4 text-brand dark:text-green-300" />
@@ -416,7 +412,7 @@ const Sidebar = () => {
           <LogOut className="h-5 w-5" />
           <span>Logout</span>
         </button>
-      </div>
+      </div> */}
     </aside>
   );
 };

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import AgripreneurDashboard from "./pages/AgripreneurDashboard";
 import FarmerDashboard from "./pages/FarmerDashboard";
@@ -48,12 +49,11 @@ function App() {
             <div className="min-h-screen bg-neutral-light dark:bg-neutral-dark text-neutral-dark dark:text-neutral-light transition-colors duration-300">
               <Routes>
                 {/* Public routes */}
+                <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
-                
-                <Route path="/" element={<Navigate to="/login" replace />} />
                 
 
                 {/* Protected routes */}

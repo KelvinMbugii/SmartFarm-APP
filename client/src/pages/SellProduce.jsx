@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -133,7 +133,7 @@ export default function SellProduce() {
     setModalOpen(true);
   };
 
-  const loadListings = async () => {
+  const loadListings = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await marketplaceApi.getMyProducts();
@@ -145,12 +145,11 @@ export default function SellProduce() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadListings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadListings]);
 
   const onPickFiles = (e) => {
     const files = Array.from(e.target.files || []);
@@ -342,7 +341,6 @@ export default function SellProduce() {
                 return (
                   <Card key={p._id} className="overflow-hidden">
                     <div className="aspect-[3/2] bg-muted">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={cover}
                         alt={p.name}
@@ -537,7 +535,6 @@ export default function SellProduce() {
                   <div className="grid grid-cols-3 gap-2">
                     {form.images.map((src, idx) => (
                       <div key={idx} className="relative rounded-md overflow-hidden border">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={src}
                           alt={`Upload ${idx + 1}`}
