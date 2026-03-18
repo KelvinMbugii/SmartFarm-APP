@@ -96,7 +96,10 @@ module.exports = (socket, io) => {
     socket.userId = userId;
 
     // Track user
-    onlineUsers.set(String(userId), socket.id);
+    if (!onlineUsers.has(String(userId))) {
+      onlineUsers.set(String(userId), new Set());
+    }
+    onlineUsers.get(String(userId)).add(socket.id);
 
     // Join personal room
     socket.join(String(userId));
@@ -193,7 +196,13 @@ module.exports = (socket, io) => {
   /* ================= DISCONNECT ================= */
   socket.on("disconnect", () => {
     if (socket.userId) {
-      onlineUsers.delete(String(socket.userId));
+      const userSockets = onlineUsers.get(String(socket.userId));
+      if (userSockets) {
+        userSockets.delete(socket.id);
+        if (userSockets.size === 0) {
+          onlineUsers.delete(String(socket.userId));
+        }
+      }
 
       io.emit("online-users", Array.from(onlineUsers.keys()));
     }

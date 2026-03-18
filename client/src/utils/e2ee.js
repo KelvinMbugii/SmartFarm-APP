@@ -156,6 +156,24 @@ export const decryptMessage = async (message, selfUserId, privateKeyBase64) => {
   return JSON.parse(decoder.decode(plaintext));
 };
 
+export const decryptFileBytes = async (encryptedBuffer, ivBase64, rawKeyBase64) => {
+  const aesKey = await crypto.subtle.importKey(
+    "raw",
+    fromBase64(rawKeyBase64),
+    { name: "AES-GCM" },
+    false,
+    ["decrypt"],
+  );
+
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: fromBase64(ivBase64) },
+    aesKey,
+    encryptedBuffer,
+  );
+
+  return decrypted;
+};
+
 export const encryptFileBytes = async (arrayBuffer) => {
   const aesKey = await crypto.subtle.generateKey(
     { name: "AES-GCM", length: 256 },

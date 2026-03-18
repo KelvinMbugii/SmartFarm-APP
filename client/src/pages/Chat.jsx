@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import {
   decryptMessage,
+  decryptFileBytes,
   encryptFileBytes,
   encryptPayloadForParticipants,
   exportHelpers,
@@ -26,6 +27,47 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const getEntityId = (value) => value?.id || value?._id;
+
+const EncryptedImage = ({ fileUrl, iv, fileKey, name, type }) => {
+  const [src, setSrc] = useState(null);
+
+  useEffect(() => {
+    let objectUrl = null;
+    const load = async () => {
+      try {
+        const url = fileUrl.startsWith("http") ? fileUrl : `${API_BASE_URL}${fileUrl || ""}`;
+        const res = await axios.get(url, { responseType: 'arraybuffer' });
+        
+        if (iv && fileKey) {
+          const decrypted = await decryptFileBytes(res.data, iv, fileKey);
+          const blob = new Blob([decrypted], { type: type || 'image/jpeg' });
+          objectUrl = URL.createObjectURL(blob);
+          setSrc(objectUrl);
+        } else {
+           const blob = new Blob([res.data], { type: type || 'image/jpeg' });
+           objectUrl = URL.createObjectURL(blob);
+           setSrc(objectUrl);
+        }
+      } catch (e) {
+        console.error("Failed to decrypt image", e);
+      }
+    };
+    if (fileUrl) load();
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [fileUrl, iv, fileKey, type]);
+
+  if (!src) return <div className="mt-1 w-40 h-40 bg-zinc-200 dark:bg-zinc-800 animate-pulse rounded-md" />;
+
+  return (
+    <img
+      src={src}
+      alt={name || "Uploaded image"}
+      className="mt-1 rounded-md max-h-60 w-auto relative z-10"
+    />
+  );
+};
 
 const Chat = () => {
   const { user } = useAuth();
@@ -45,6 +87,7 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [privateKey, setPrivateKey] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -143,7 +186,11 @@ const Chat = () => {
     if (String(incomingChatId) !== String(getEntityId(activeChat))) return;
 
     const decrypted = await mapMessage(message);
-    setMessages((prev) => [...prev, decrypted]);
+    setMessages((prev) => {
+      const exists = prev.some((m) => String(getEntityId(m)) === String(getEntityId(message)));
+      if (exists) return prev;
+      return [...prev, decrypted];
+    });
   };
 
   const filteredUsers = useMemo(() => {
@@ -207,36 +254,45 @@ const Chat = () => {
   };
 
   const sendMessage = async (messageText = newMessage, imageMeta = null) => {
-    if (!activeChat) return;
+    if (!activeChat || isSending) return;
 
     const text = messageText.trim();
     if (!text && !imageMeta) return;
 
-    const encrypted = await encryptPayloadForParticipants(
-      { text, imageMeta },
-      activeChat.participants,
-    );
+    setIsSending(true);
+    try {
+      const encrypted = await encryptPayloadForParticipants(
+        { text, imageMeta },
+        activeChat.participants,
+      );
 
-    const res = await axios.post(
-      `${API_BASE_URL}/api/chat/${getEntityId(activeChat)}/message`,
-      encrypted,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
+      const res = await axios.post(
+        `${API_BASE_URL}/api/chat/${getEntityId(activeChat)}/message`,
+        encrypted,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
 
-    const decrypted = await mapMessage(res.data);
-    setMessages((prev) => [...prev, decrypted]);
-    setNewMessage("");
+      const decrypted = await mapMessage(res.data);
+      setMessages((prev) => [...prev, decrypted]);
+      setNewMessage("");
 
-    socket?.emit("send-message", {
-      chatId: getEntityId(activeChat),
-      message: res.data,
-    });
+      socket?.emit("send-message", {
+        chatId: getEntityId(activeChat),
+        message: res.data,
+      });
+    } catch (error) {
+      console.error("sendMessage error:", error);
+      toast.error("Failed to send message: " + error.message);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleImageUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (!file || !activeChat) return;
+    if (!file || !activeChat || isSending) return;
 
+    setIsSending(true);
     try {
       const arr = await file.arrayBuffer();
       const { encryptedBuffer, iv, rawKey } = await encryptFileBytes(arr);
@@ -263,7 +319,11 @@ const Chat = () => {
         iv: exportHelpers.toBase64(iv),
         fileKey: exportHelpers.toBase64(new Uint8Array(rawKey)),
       });
+    } catch (error) {
+      console.error("handleImageUpload error:", error);
+      toast.error("Failed to upload image: " + error.message);
     } finally {
+      setIsSending(false);
       event.target.value = "";
     }
   };
@@ -405,10 +465,12 @@ const Chat = () => {
                         </p>
                       )}
                       {msg.imageMeta?.fileUrl && (
-                        <img
-                          src={resolveFileUrl(msg.imageMeta.fileUrl)}
-                          alt={msg.imageMeta.name || "Uploaded image"}
-                          className="mt-1 rounded-md max-h-60 w-auto relative z-10"
+                        <EncryptedImage
+                          fileUrl={msg.imageMeta.fileUrl}
+                          iv={msg.imageMeta.iv}
+                          fileKey={msg.imageMeta.fileKey}
+                          name={msg.imageMeta.name}
+                          type={msg.imageMeta.type}
                         />
                       )}
                     </div>
@@ -430,9 +492,10 @@ const Chat = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5 h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-colors"
+                className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5 h-10 w-10 shrink-0 rounded-full flex items-center justify-center transition-colors disabled:opacity-50"
                 onClick={() => imageRef.current?.click()}
                 title="Attach file"
+                disabled={isSending}
               >
                 <Plus className="h-[24px] w-[24px]" />
               </Button>
@@ -450,7 +513,7 @@ const Chat = () => {
                 size="icon"
                 className="text-[#54656f] dark:text-[#8696a0] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-50"
                 onClick={() => sendMessage()}
-                disabled={!newMessage.trim()}
+                disabled={!newMessage.trim() || isSending}
               >
                 <Send className="h-[20px] w-[20px]" />
               </Button>
