@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { MessageCircle, Send, Search, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   decryptMessage,
@@ -145,56 +146,64 @@ const Chat = () => {
     setMessages((prev) => [...prev, decrypted]);
   };
 
-  const onlineUserList = useMemo(() => {
+  const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     return users.filter((u) => {
-      const isOnline = onlineUsers.includes(getEntityId(u));
-      if (!isOnline) return false;
+      // Exclude current user from their own list
+      if (String(getEntityId(u)) === String(getEntityId(user))) return false;
+      // Exclude admins
+      if (String(u?.role).toLowerCase() === "admin") return false;
+
       if (!query) return true;
       return (
         u?.name?.toLowerCase().includes(query) ||
-        u?.email?.toLowerCase().includes(query) ||
         String(u?.role || "")
           .toLowerCase()
           .includes(query)
       );
     });
-  }, [users, onlineUsers, searchTerm]);
-
-  const selectedOnlineUser = onlineUserList.find(
-    (u) => String(getEntityId(u)) === String(selectedOnlineUserId),
-  );
+  }, [users, searchTerm, user]);
 
   const openChat = async (chat) => {
-    setActiveChat(chat);
-    await fetchMessages(getEntityId(chat));
-    navigate(`/chat/${getEntityId(chat)}`);
+    try {
+      setActiveChat(chat);
+      await fetchMessages(getEntityId(chat));
+      navigate(`/chat/${getEntityId(chat)}`);
+    } catch (error) {
+      console.error("openChat error:", error);
+      toast.error("Failed to open chat: " + error.message);
+    }
   };
 
-  const startChat = async () => {
-    if (!selectedOnlineUserId) return;
+  const handleUserClick = async (userId) => {
+    try {
+      setSelectedOnlineUserId(userId);
 
-    const existingChat = chats.find((chat) =>
-      chat?.participants?.some(
-        (participant) =>
-          String(getEntityId(participant)) === String(selectedOnlineUserId),
-      ),
-    );
+      const existingChat = chats.find((chat) =>
+        chat?.participants?.some(
+          (participant) =>
+            String(getEntityId(participant)) === String(userId),
+        ),
+      );
 
-    if (existingChat) {
-      await openChat(existingChat);
-      return;
+      if (existingChat) {
+        await openChat(existingChat);
+        return;
+      }
+
+      const res = await axios.post(
+        `${API_BASE_URL}/api/chat`,
+        { participantId: userId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      const chat = res.data;
+      setChats((prev) => [chat, ...prev]);
+      await openChat(chat);
+    } catch (error) {
+      console.error("handleUserClick error:", error);
+      toast.error(error.response?.data?.error || error.message || "Failed to start chat");
     }
-
-    const res = await axios.post(
-      `${API_BASE_URL}/api/chat`,
-      { participantId: selectedOnlineUserId },
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-
-    const chat = res.data;
-    setChats((prev) => [chat, ...prev]);
-    await openChat(chat);
   };
 
   const sendMessage = async (messageText = newMessage, imageMeta = null) => {
@@ -272,7 +281,7 @@ const Chat = () => {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search online users by name, email, role..."
+            placeholder="Search users by name, email, role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-9"
@@ -281,15 +290,16 @@ const Chat = () => {
 
         <Card className="flex-1 min-h-0 flex flex-col">
           <CardHeader className="pb-2 shrink-0">
-            <CardTitle>Online Users</CardTitle>
+            <CardTitle>All Users</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 flex-1 min-h-0 flex flex-col pb-4">
             <ScrollArea className="flex-1">
               <div className="space-y-2 pr-2">
-                {onlineUserList.map((u) => {
+                {filteredUsers.map((u) => {
                   const userId = getEntityId(u);
                   const isSelected =
                     String(userId) === String(selectedOnlineUserId);
+                  const isOnline = onlineUsers.includes(userId);
 
                   return (
                     <button
@@ -300,39 +310,33 @@ const Chat = () => {
                           ? "border-primary bg-primary/10"
                           : "border-transparent hover:bg-muted"
                       }`}
-                      onClick={() => setSelectedOnlineUserId(userId)}
+                      onClick={() => handleUserClick(userId)}
                     >
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={u.avatar} />
-                        <AvatarFallback>{u.name?.[0]}</AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={u.avatar} />
+                          <AvatarFallback>{u.name?.[0]}</AvatarFallback>
+                        </Avatar>
+                        {isOnline && (
+                          <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{u.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {u.email}
+                        <p className="text-xs text-muted-foreground truncate capitalize">
+                          {u.role || "user"}
                         </p>
                       </div>
-                      <Badge variant="secondary">{u.role || "user"}</Badge>
                     </button>
                   );
                 })}
-                {onlineUserList.length === 0 && (
+                {filteredUsers.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-6">
-                    No online users found.
+                    No users found.
                   </p>
                 )}
               </div>
             </ScrollArea>
-
-            <Button
-              className="w-full"
-              onClick={startChat}
-              disabled={!selectedOnlineUser}
-            >
-              {selectedOnlineUser
-                ? `Start chat with ${selectedOnlineUser.name}`
-                : "Select an online user to start chat"}
-            </Button>
           </CardContent>
         </Card>
 
@@ -354,8 +358,14 @@ const Chat = () => {
                 <h3 className="font-semibold text-foreground truncate">
                   {otherUser?.name || "Conversation"}
                 </h3>
-                <p className="text-xs text-muted-foreground truncate">
-                  {otherUser?.role ? `Role: ${otherUser.role}` : "user"}
+                <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                  <span className="capitalize">{otherUser?.role || "user"}</span>
+                  <span>•</span>
+                  {onlineUsers.includes(getEntityId(otherUser)) ? (
+                    <span className="text-green-600 dark:text-green-400 font-medium">Online</span>
+                  ) : (
+                    <span>Offline</span>
+                  )}
                 </p>
               </div>
             </div>

@@ -104,6 +104,7 @@ function App() {
                   <Route path="knowledge" element={<Knowledge />} />
                   <Route path="consultations" element={<Consultations />} />
                   <Route path="chat" element={<Chat />} />
+                  <Route path="chat/:chatId" element={<Chat />} />
                   <Route path="market" element={<Market />} />
                   <Route path="marketplace" element={<Marketplace/>}/>
                   <Route path="my-orders" element={<MyOrders />} />

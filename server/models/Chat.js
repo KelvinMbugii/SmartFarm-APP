@@ -18,15 +18,12 @@ const chatSchema = new mongoose.Schema({
     lastMessage: {
         sender: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'user',
-            required: true
+            ref: 'user'
         },
-        type : {
-            type: String,
-            required: true
+        type: {
+            type: String
         },
-        createdAt: Date,
-        
+        createdAt: Date
     },
     
 });
