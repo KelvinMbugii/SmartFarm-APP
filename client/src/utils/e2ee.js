@@ -132,28 +132,33 @@ export const decryptMessage = async (message, selfUserId, privateKeyBase64) => {
     return null;
   }
 
-  const privateKey = await importPrivateKey(privateKeyBase64);
-  const decryptedAesKey = await crypto.subtle.decrypt(
-    { name: "RSA-OAEP" },
-    privateKey,
-    fromBase64(recipientKey.encryptedKey),
-  );
+  try {
+    const privateKey = await importPrivateKey(privateKeyBase64);
+    const decryptedAesKey = await crypto.subtle.decrypt(
+      { name: "RSA-OAEP" },
+      privateKey,
+      fromBase64(recipientKey.encryptedKey),
+    );
 
-  const aesKey = await crypto.subtle.importKey(
-    "raw",
-    decryptedAesKey,
-    { name: "AES-GCM" },
-    false,
-    ["decrypt"],
-  );
+    const aesKey = await crypto.subtle.importKey(
+      "raw",
+      decryptedAesKey,
+      { name: "AES-GCM" },
+      false,
+      ["decrypt"],
+    );
 
-  const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: fromBase64(message.nonce) },
-    aesKey,
-    fromBase64(message.ciphertext),
-  );
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: fromBase64(message.nonce) },
+      aesKey,
+      fromBase64(message.ciphertext),
+    );
 
-  return JSON.parse(decoder.decode(plaintext));
+    return JSON.parse(decoder.decode(plaintext));
+  } catch (error) {
+    console.warn("Message decryption failed:", error.message || error);
+    return { text: "⚠️ This message could not be decrypted." };
+  }
 };
 
 export const decryptFileBytes = async (encryptedBuffer, ivBase64, rawKeyBase64) => {
