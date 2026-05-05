@@ -45,13 +45,17 @@ const allowedOrigins = [
   "https://smart-farm-app.vercel.app",
   "https://vercel.com/kelvin-mbugiis-projects/smart-farm-app/io5tLQNFby3gXf2kaCGHfzkk31Gt",
   "https://smartfarm-app.onrender.com",
+  "https://smart-farm-h0gjn4ibb-kelvin-mbugiis-projects.vercel.app", // Added new Vercel origin
 ];
 
 // CORS middleware
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow exact matches or any Vercel preview deployment for the smart-farm project
+      const isVercelPreview = origin && origin.startsWith("https://smart-farm-") && origin.endsWith(".vercel.app");
+      
+      if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
         callback(null, true);
       } else {
         callback(new Error("CORS error: Origin not allowed"));
@@ -86,7 +90,10 @@ mongoose
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow exact matches or any Vercel preview deployment for the smart-farm project
+      const isVercelPreview = origin && origin.startsWith("https://smart-farm-") && origin.endsWith(".vercel.app");
+      
+      if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
         callback(null, true);
       } else {
         callback(new Error("CORS error: Origin not allowed"));
