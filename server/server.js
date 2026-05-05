@@ -43,6 +43,7 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://smart-farm-app.vercel.app",
+  "https://vercel.com/kelvin-mbugiis-projects/smart-farm-app/io5tLQNFby3gXf2kaCGHfzkk31Gt",
   "https://smartfarm-app.onrender.com",
 ];
 
