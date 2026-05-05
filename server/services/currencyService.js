@@ -1,45 +1,46 @@
-// const fetch = require("node-fetch");
+const axios = require("axios");
 
-// // Fetch current USD → KES exchange rate dynamically
-// const getUSDtoKESRate = async () => {
-//   try {
-//     const res = await fetch(
-//       "https://api.exchangerate.host/latest?base=USD&symbols=KES",
-//     );
-//     const data = await res.json();
-//     return data.rates?.KES || 150; // fallback
-//   } catch (error) {
-//     console.error("Currency API error:", error);
-//     return 150; // fallback
-//   }
-// };
+const CURRENCY_API_URL = "https://open.er-api.com/v6/latest/USD";
+const FALLBACK_USD_TO_KES = 150;
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+let cachedRate = null;
+let cachedAt = 0;
 
-// module.exports = { getUSDtoKESRate };
+const getCachedRate = () => {
+  if (cachedRate && Date.now() - cachedAt < CACHE_TTL_MS) {
+    return cachedRate;
+  }
+  return null;
+};
 
+const fetchRateFromApi = async () => {
+  const response = await axios.get(CURRENCY_API_URL, { timeout: 7000 });
+  const data = response.data;
+  const rate = Number(data?.rates?.KES);
 
-// currencyService.js
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error("Exchange API did not return a valid KES rate");
+  }
 
-// Fetch current USD → KES exchange rate dynamically
+  return rate;
+};
+
+// Fetch current USD → KES exchange rate with timeout + cache + fallback
 const getUSDtoKESRate = async () => {
+  const cached = getCachedRate();
+  if (cached) return cached;
+
   try {
-    const res = await fetch(
-      "https://api.exchangerate.host/latest?base=USD&symbols=KES"
-    );
-
-    // Check if request succeeded
-    if (!res.ok) {
-      throw new Error(`Exchange API error: ${res.status}`);
-    }
-
-    const data = await res.json();
-
-    // Return the exchange rate
-    return data?.rates?.KES || 150; // fallback rate if API fails
+    const rate = await fetchRateFromApi();
+    cachedRate = rate;
+    cachedAt = Date.now();
+    return rate;
   } catch (error) {
-    console.error("Currency API error:", error);
-
-    // fallback value if API call fails
-    return 150;
+    const fallbackRate = cachedRate || FALLBACK_USD_TO_KES;
+    console.warn(
+      `Currency API unavailable, using fallback rate ${fallbackRate} KES/USD.`,
+    );
+    return fallbackRate;
   }
 };
 

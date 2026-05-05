@@ -44,7 +44,18 @@ router.get("/health", async (req, res) => {
 // Get market prices
 router.get("/prices", async (req, res) => {
   try {
-    const { commodity, market, days = 30 } = req.query;
+     const { commodity, market, live = "false" } = req.query;
+    const parsedDays = Number.parseInt(req.query.days, 10);
+    const days = Number.isFinite(parsedDays) && parsedDays > 0 ? parsedDays : 30;
+
+    if (live === "true") {
+      const livePrices = await getMarketPrices("KE");
+      const filteredLivePrices = livePrices
+        .filter((priceItem) => !commodity || commodity === "all" || priceItem.commodity === commodity)
+        .filter((priceItem) => !market || priceItem.market === market);
+
+      return res.json(filteredLivePrices);
+    }
 
     const query = {};
     // Only filter if the query param exists
@@ -70,10 +81,10 @@ router.get("/prices", async (req, res) => {
       return res.json(mockPrices);
     }
 
-    res.json(prices);
+    return res.json(prices);
   } catch (error) {
     console.error("Market prices error:", error);
-    res.json([]);
+    return res.json([]);
   }
 });
 
