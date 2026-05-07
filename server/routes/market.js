@@ -49,12 +49,19 @@ router.get("/prices", async (req, res) => {
     const days = Number.isFinite(parsedDays) && parsedDays > 0 ? parsedDays : 30;
 
     if (live === "true") {
-      const livePrices = await getMarketPrices("KE");
-      const filteredLivePrices = livePrices
-        .filter((priceItem) => !commodity || commodity === "all" || priceItem.commodity === commodity)
-        .filter((priceItem) => !market || priceItem.market === market);
+      try {
+        const livePrices = await getMarketPrices("KE");
+        const filteredLivePrices = livePrices
+          .filter((priceItem) => !commodity || commodity === "all" || priceItem.commodity === commodity)
+          .filter((priceItem) => !market || priceItem.market === market);
 
-      return res.json(filteredLivePrices);
+        return res.json(filteredLivePrices);
+      } catch (error) {
+        console.error("Live market prices error:", error.message || error);
+        return res.status(502).json({
+          error: "Failed to fetch live market prices",
+        });
+      }
     }
 
     const query = {};

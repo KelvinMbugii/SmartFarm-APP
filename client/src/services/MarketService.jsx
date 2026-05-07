@@ -31,7 +31,11 @@ class MarketService {
       });
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
-      console.error("Live market API error:", error);
+      if ( error?.response?.status === 502){
+        console.warn("Live market API unavailable; using mock market data.");
+      } else {
+        console.error("Live market API error:", error);
+      }
       return this.getMockMarketData();
     }
   }
@@ -64,7 +68,7 @@ class MarketService {
         params: {commodity: commodity || undefined },
       });
 
-      return Array.isArray(response.dataa)
+      return Array.isArray(response.data)
         ? response.data.map((item) => ({
           date: item?._id?.date,
           commodity: item?._id?.commodity,

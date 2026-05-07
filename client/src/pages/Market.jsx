@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,79 +36,78 @@ const Market = () => {
 
   // Load commodities on mount
   useEffect(() => {
+    const fetchCommodities = async () => {
+      try{
+        const data = await marketService.getCommodities();
+        setCommodities(data);
+      } catch (error){
+        console.error("Error fetching commodities:", error);
+        setCommodities(["Rice", "Wheat", "Corn", "Soyabeans", "Cotton", "Sugar"]);
+      }
+    };
     fetchCommodities();
   }, []);
 
   // Load prices and trends whenever commodity or source changes
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchMarketPrices = async() => {
+      setLoading(true);
+      try {
+        const commodity = selectedCommodity !== "all" ? selectedCommodity : "";
+        const data = useLivePrices
+         ? await marketService.getLiveMarketPrices(commodity)
+         : await marketService.getMarketPrices(commodity);
+
+         if (cancelled) return;
+
+         const processed = data.map((item) => ({
+          ...item,
+          trend: item.change > 0 ? "up" : item.change < 0 ? "down" : "flat",
+          change: Number(item.change || 0),
+         }));
+         setPrices(processed);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error fetching market prices:", error);
+          setPrices(marketService.getMockMarketData());
+        }
+      } finally {
+        if (!cancelled){
+          setLoading(false);
+        }
+      }
+    };
+  
+    const fetchPriceTrends = async () => {
+      if (!selectedCommodity || selectedCommodity === "all"){
+        setTrends([]);
+        return;
+      }
+
+      try {
+        const data = await marketService.getPriceTrends(selectedCommodity);
+
+        if (!cancelled) {
+          setTrends(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error fetching price trends:", error);
+          setTrends([]);
+        }
+      }
+    };
+
     fetchMarketPrices();
-    if (selectedCommodity && selectedCommodity !== "all") {
-      fetchPriceTrends();
-    } else {
-      setTrends([]);
-    }
+    fetchPriceTrends();
+
+    return () => {
+      cancelled = true;
+
+    };
   }, [selectedCommodity, useLivePrices]);
-
-  const fetchMarketPrices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = useLivePrices
-        ? await marketService.getLiveMarketPrices(
-            selectedCommodity !== "all" ? selectedCommodity : "",
-          )
-        : await marketService.getMarketPrices(
-            selectedCommodity !== "all" ? selectedCommodity : "",
-          );
-
-      const processed = data.map((item) => ({
-        ...item,
-        trend: item.change > 0 ? "up" : item.change < 0 ? "down" : "flat",
-        change: Number(item.change || 0),
-      }));
-      setPrices(processed);
-    } catch (error) {
-      console.error("Error fetching market prices:", error);
-      setPrices(marketService.getMockMarketData());
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedCommodity, useLivePrices]);
-
-  const fetchCommodities = useCallback(async () => {
-    try {
-      const data = await marketService.getCommodities();
-      setCommodities(data);
-    } catch (error) {
-      console.error("Error fetching commodities:", error);
-      setCommodities(["Rice", "Wheat", "Corn", "Soybeans", "Cotton", "Sugar"]);
-    }
-  }, []);
-
-  const fetchPriceTrends = useCallback(async () => {
-    try {
-      const data = await marketService.getPriceTrends(selectedCommodity);
-      setTrends(data);
-    } catch (error) {
-      console.error("Error fetching price trends:", error);
-      setTrends([]);
-    }
-  }, [selectedCommodity]);
-
-  useEffect(() => {
-    fetchMarketPrices();
-  }, [fetchMarketPrices]);
-
-  useEffect(() => {
-    fetchCommodities();
-  }, [fetchCommodities]);
-
-  useEffect(() => {
-    if (selectedCommodity && selectedCommodity !== 'all') {
-      fetchPriceTrends();
-    } else {
-      setTrends([]);
-    }
-  }, [selectedCommodity, fetchPriceTrends]);
 
   const openAlertModal = (commodity) => {
     const fallbackCommodity =

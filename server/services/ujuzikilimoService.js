@@ -4,6 +4,13 @@ const { getUSDtoKESRate } = require("./currencyService");
 const API_KEY = process.env.UJUZI_API_KEY;
 const UJUZI_BASE = "https://farmsuite.ujuzikilimo.com/api/v1";
 
+const MARKET_DATA_TTL_MS = 10 * 60 * 1000;
+
+let cachedToken = null;
+let cachedMarketPrices = null;
+let cachedMarketPricesCountry = null;
+let cachedMarketPricesAt = 0;
+
 // Helper function to retry async operations to handle intermittent network issues
 const withRetry = async (fn, retries = 3, delay = 2000) => {
   for (let i = 0; i < retries; i++) {
@@ -18,6 +25,10 @@ const withRetry = async (fn, retries = 3, delay = 2000) => {
 };
 
 const generateToken = async () => {
+  if (cachedToken){
+    return cachedToken;
+  }
+
   const res = await axios.post(`${UJUZI_BASE}/auth/generate-token`, {
     api_key: API_KEY,
     device_name: "SmartFarm",
@@ -26,11 +37,22 @@ const generateToken = async () => {
     timeout: 15000 // Increased timeout from 10s to 15s
   });
 
-  return res.data.token;
+  cachedToken = res.data.token;
+  return cachedToken;
 };
 
 // Fetch live African market prices with KES conversion
 const getMarketPrices = async (countryCode = "KE") => {
+  const now = Date.now();
+  const hasValidMarketCache =
+    cachedMarketPrices &&
+    cachedMarketPricesCountry === countryCode &&
+    now - cachedMarketPricesAt < MARKET_DATA_TTL_MS;
+  
+  if (hasValidMarketCache) {
+    return cachedMarketPrices;
+  }
+
   try {
     // Retry token generation up to 3 times
     const token = await withRetry(generateToken, 3, 2000);
@@ -48,7 +70,7 @@ const getMarketPrices = async (countryCode = "KE") => {
     const data = res.data;
     const usdToKES = await getUSDtoKESRate();
 
-    return (data?.markets || [])
+    const prices = (data?.markets || [])
       .filter((m) => ["KE", "UG", "TZ", "NG", "ZA"].includes(m.country_code))
       .map((m) => ({
         commodity: m.commodity,
@@ -60,11 +82,18 @@ const getMarketPrices = async (countryCode = "KE") => {
         trend: m.change > 0 ? "up" : m.change < 0 ? "down" : "flat",
         change: Number(m.change || 0),
       }));
+    
+    cachedMarketPrices = prices;
+    cachedMarketPricesCountry = countryCode;
+    cachedMarketPricesAt = now;
+
+    return prices;
   } catch (error) {
+    cachedToken = null;
     console.error("Ujuzi API error after retries:", error.message || error);
     // Returning an empty array prevents the application from crashing
     // You could also return cached data or fallback data here
-    return [];
+    throw error;
   }
 };
 
