@@ -5,6 +5,16 @@ const { getMarketPrices } = require("../services/ujuzikilimoService");
 const { protect, authorizeRoles } = require("../middlewares/auth");
 const PriceAlert = require("../models/PriceAlert");
 const { notifyPriceAlerts } = require("../utils/priceAlertNotifications");
+const rateLimit = require("express-rate-limit");
+
+const marketLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
+  message: { error: "Too many requests from this IP, please try again later." }
+});
+
+router.use(marketLimiter);
+
 
 // Health
 router.get("/health", async (req, res) => {

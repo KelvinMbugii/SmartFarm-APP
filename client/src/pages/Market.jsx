@@ -23,16 +23,27 @@ import { Search, TrendingUp, TrendingDown, Bell, Minus } from "lucide-react";
 import PriceAlertModal from "@/components/PriceAlertModal";
 import marketService from "@/services/MarketService.jsx";
 
+// Import custom hooks and store
+import { useMarketData } from "@/hooks/useMarketData";
+import { useMarketStore } from "@/store/useMarketStore";
+
 const Market = () => {
-  const [prices, setPrices] = useState([]);
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedCommodity,
+    setSelectedCommodity,
+    useLivePrices,
+    toggleLivePrices,
+    alertModalOpen,
+    alertCommodity,
+    setAlertModalOpen,
+    openAlertModal,
+    resetFilters
+  } = useMarketStore();
+
   const [commodities, setCommodities] = useState([]);
   const [trends, setTrends] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCommodity, setSelectedCommodity] = useState("all");
-  const [alertModalOpen, setAlertModalOpen] = useState(false);
-  const [alertCommodity, setAlertCommodity] = useState("Rice");
-  const [useLivePrices, setUseLivePrices] = useState(true);
 
   // Load commodities on mount
   useEffect(() => {
@@ -48,38 +59,13 @@ const Market = () => {
     fetchCommodities();
   }, []);
 
-  // Load prices and trends whenever commodity or source changes
+  // Use Custom Hook for Data Fetching
+  const { data: prices, loading, error } = useMarketData(selectedCommodity, useLivePrices);
+
+  // Load trends whenever commodity changes
   useEffect(() => {
     let cancelled = false;
 
-    const fetchMarketPrices = async() => {
-      setLoading(true);
-      try {
-        const commodity = selectedCommodity !== "all" ? selectedCommodity : "";
-        const data = useLivePrices
-         ? await marketService.getLiveMarketPrices(commodity)
-         : await marketService.getMarketPrices(commodity);
-
-         if (cancelled) return;
-
-         const processed = data.map((item) => ({
-          ...item,
-          trend: item.change > 0 ? "up" : item.change < 0 ? "down" : "flat",
-          change: Number(item.change || 0),
-         }));
-         setPrices(processed);
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Error fetching market prices:", error);
-          setPrices(marketService.getMockMarketData());
-        }
-      } finally {
-        if (!cancelled){
-          setLoading(false);
-        }
-      }
-    };
-  
     const fetchPriceTrends = async () => {
       if (!selectedCommodity || selectedCommodity === "all"){
         setTrends([]);
@@ -88,7 +74,6 @@ const Market = () => {
 
       try {
         const data = await marketService.getPriceTrends(selectedCommodity);
-
         if (!cancelled) {
           setTrends(data);
         }
@@ -100,23 +85,20 @@ const Market = () => {
       }
     };
 
-    fetchMarketPrices();
     fetchPriceTrends();
 
     return () => {
       cancelled = true;
-
     };
-  }, [selectedCommodity, useLivePrices]);
+  }, [selectedCommodity]);
 
-  const openAlertModal = (commodity) => {
+  const handleOpenAlertModal = (commodity) => {
     const fallbackCommodity =
       commodity ||
       (selectedCommodity !== "all" && selectedCommodity) ||
       commodities?.[0] ||
       "Rice";
-    setAlertCommodity(fallbackCommodity);
-    setAlertModalOpen(true);
+    openAlertModal(fallbackCommodity);
   };
 
   const getTrendIcon = (trend) => {
@@ -177,13 +159,13 @@ const Market = () => {
         <div className="flex items-center gap-2">
           <Button
             className="bg-primary hover:bg-primary/90"
-            onClick={() => openAlertModal(selectedCommodity)}
+            onClick={() => handleOpenAlertModal(selectedCommodity)}
           >
             <Bell className="w-4 h-4 mr-2" /> Set Price Alert
           </Button>
           <Button
             variant={useLivePrices ? "outline" : "default"}
-            onClick={() => setUseLivePrices(!useLivePrices)}
+            onClick={toggleLivePrices}
           >
             {useLivePrices ? "Stored Prices" : "Live Prices"}
           </Button>
@@ -226,16 +208,20 @@ const Market = () => {
 
             <Button
               variant="outline"
-              onClick={() => {
-                setSelectedCommodity("all");
-                setSearchTerm("");
-              }}
+              onClick={resetFilters}
             >
               Clear Filters
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md flex items-center justify-between">
+          <span>Failed to fetch live prices: {error}. Using cached/fallback data.</span>
+        </div>
+      )}
 
       {/* Price Trend Chart */}
       {trends.length > 0 && (
@@ -352,7 +338,7 @@ const Market = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openAlertModal(price.commodity)}
+                      onClick={() => handleOpenAlertModal(price.commodity)}
                     >
                       Set Alert
                     </Button>

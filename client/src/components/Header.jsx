@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Menu,
+  X,
   Bell,
   Settings,
   Search,
@@ -11,10 +12,12 @@ import {
 import profileImage from "@/assets/logo.jpeg";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const Header = ({ isSidebarOpen, setIsSidebarOpen, toggleSidebar }) => {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -26,7 +29,11 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen, toggleSidebar }) => {
             onClick={toggleSidebar}
             className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10 md:hidden"
           >
-            <Menu className="w-6 h-6 text-[#1B4332] dark:text-white" />
+            {isSidebarOpen ? (
+              <X className="w-6 h-6 text-[#1B4332] dark:text-white" />
+            ) : (
+              <Menu className="w-6 h-6 text-[#1B4332] dark:text-white" />
+            )}
           </button>
 
           <div className="flex items-center bg-[#F8F5F2] dark:bg-white/10 px-3 md:px-4 py-2 rounded-full">
@@ -51,12 +58,18 @@ const Header = ({ isSidebarOpen, setIsSidebarOpen, toggleSidebar }) => {
             )}
           </button>
 
-          <button className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10 relative">
+          <button 
+            onClick={() => navigate("/notifications")}
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10 relative"
+          >
             <Bell className="w-5 h-5 text-[#1B4332] dark:text-white" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-[#E9B44C] rounded-full"></span>
           </button>
 
-          <button className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10">
+          <button 
+            onClick={() => navigate("/profile")}
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10"
+          >
             <Settings className="w-5 h-5 text-[#1B4332] dark:text-white" />
           </button>
 
