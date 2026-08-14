@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Tractor, 
+import {  
   ShieldCheck, 
   BarChart3, 
   Leaf, 
@@ -37,6 +36,7 @@ const aiDiseaseImg = "/images/Ai assisted farming.png";
 const marketplaceImg = "/images/Buyer agriprenuer.png";
 const smartToolsImg = "/images/Farmer connnecting 2.jpeg";
 const communityImg = "/images/farmers collaborating.jpeg";
+const LogoImage = "/assets/logo.jpeg"
 
 const stats = [
   { value: "10K+", label: "Active Farmers" },
@@ -353,7 +353,7 @@ const Landing = () => {
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 group">
               <div className="bg-white/20 backdrop-blur-sm rounded-xl p-2.5 group-hover:bg-white/30 transition-all duration-300">
-                <Tractor className="h-8 w-8 text-secondary" />
+                <LogoImage className="h-8 w-8 text-secondary" />
               </div>
               <span className="text-xl font-bold font-heading text-white tracking-tight">SmartFarm</span>
             </Link>
@@ -696,7 +696,7 @@ const Landing = () => {
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-primary/10 rounded-xl p-2">
-                  <Tractor className="h-8 w-8 text-primary" />
+                  <LogoImage className="h-8 w-8 text-primary" />
                 </div>
                 <span className="text-xl font-bold font-heading text-foreground">SmartFarm</span>
               </div>
