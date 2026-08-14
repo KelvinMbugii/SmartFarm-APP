@@ -21,6 +21,8 @@ const forumRoutes = require("./routes/forum");
 const marketplaceRoutes = require("./routes/marketplace");
 const aiRoutes = require("./routes/ai");
 const officerRoutes = require("./routes/officers");
+const adminRoutes = require("./routes/admin");
+const notificationRoutes = require("./routes/notification");
 
 // Import socket handlers
 const chatHandler = require("./socket/chatHandler");
@@ -41,28 +43,35 @@ const server = http.createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://smart-farm-app.vercel.app",
+  "https://vercel.com/kelvin-mbugiis-projects/smart-farm-app/io5tLQNFby3gXf2kaCGHfzkk31Gt",
   "https://smartfarm-app.onrender.com",
+  "https://smart-farm-h0gjn4ibb-kelvin-mbugiis-projects.vercel.app", // Added new Vercel origin
 ];
 
 // CORS middleware
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow exact matches or any Vercel preview deployment for the smart-farm project
+      const isVercelPreview = origin && origin.startsWith("https://smart-farm-") && origin.endsWith(".vercel.app");
+      
+      if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
         callback(null, true);
       } else {
         callback(new Error("CORS error: Origin not allowed"));
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 // Body parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -81,7 +90,10 @@ mongoose
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow exact matches or any Vercel preview deployment for the smart-farm project
+      const isVercelPreview = origin && origin.startsWith("https://smart-farm-") && origin.endsWith(".vercel.app");
+      
+      if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
         callback(null, true);
       } else {
         callback(new Error("CORS error: Origin not allowed"));
@@ -128,6 +140,8 @@ app.use("/api/forum", forumRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/officers", officerRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Gracefully shutdown
 process.on("SIGINT", async () => {

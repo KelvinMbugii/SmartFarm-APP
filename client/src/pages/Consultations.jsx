@@ -59,7 +59,7 @@ const Consultations = () => {
       user?.role === 'farmer' &&
       formData.officerId &&
       formData.scheduledDate &&
-      (formData.consultationType === 'video-call' || formData.consultationType === 'in-person');
+      (formData.consultationType === 'video-call' || formData.consultationType === 'in-person' || formData.consultationType === 'virtual' || formData.consultationType === 'physical' || formData.consultationType === 'hybrid');
 
     if (!shouldFetchSlots) {
       setAvailableSlots([]);
@@ -105,6 +105,10 @@ const Consultations = () => {
   };
 
   const handleCreateConsultation = async () => {
+    if (!formData.officerId) return toast.error("Please select an officer.");
+    if (!formData.subject.trim()) return toast.error("Subject is required.");
+    if (!formData.description.trim()) return toast.error("Description is required.");
+
     try {
       await consultationService.createConsultation(formData);
       toast.success("Consultation request created successfully");
@@ -200,11 +204,15 @@ const Consultations = () => {
   const getTypeIcon = (type) => {
     switch (type) {
       case "video-call":
+      case "virtual":
         return <Video className="w-4 h-4" />;
       case "phone-call":
         return <Phone className="w-4 h-4" />;
       case "in-person":
+      case "physical":
         return <MapPin className="w-4 h-4" />;
+      case "hybrid":
+        return <Video className="w-4 h-4" />;
       default:
         return <MessageSquare className="w-4 h-4" />;
     }
@@ -386,13 +394,13 @@ const Consultations = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="chat">Chat</SelectItem>
-                    <SelectItem value="phone-call">Phone Call</SelectItem>
-                    <SelectItem value="video-call">Video Call</SelectItem>
-                    <SelectItem value="in-person">In Person</SelectItem>
+                    <SelectItem value="virtual">Virtual</SelectItem>
+                    <SelectItem value="physical">Physical</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {(formData.consultationType === "video-call" || formData.consultationType === "in-person") && (
+              {(formData.consultationType === "video-call" || formData.consultationType === "in-person" || formData.consultationType === "virtual" || formData.consultationType === "physical" || formData.consultationType === "hybrid") && (
                 <>
                   <div>
                     <label className="text-sm font-medium">Scheduled Date</label>
@@ -496,6 +504,44 @@ const Consultations = () => {
                   {selectedConsultation.description}
                 </p>
               </div>
+
+              {(selectedConsultation.consultationType === 'virtual' || selectedConsultation.consultationType === 'video-call' || selectedConsultation.consultationType === 'hybrid') && (
+                <div className="mb-6 bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Video className="w-4 h-4" /> Google Meet Link
+                  </h4>
+                  {user?.role === "officer" ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="https://meet.google.com/..."
+                        value={selectedConsultation.meetingLink || ""}
+                        onChange={(e) => setSelectedConsultation({...selectedConsultation, meetingLink: e.target.value})}
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() => consultationService.updateConsultation(selectedConsultation._id, { meetingLink: selectedConsultation.meetingLink }).then(() => toast.success("Meeting link saved")).catch(() => toast.error("Failed to save link"))}
+                      >
+                        Save
+                      </Button>
+                      {selectedConsultation.meetingLink && (
+                        <Button asChild>
+                          <a href={selectedConsultation.meetingLink} target="_blank" rel="noopener noreferrer">Start</a>
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {selectedConsultation.meetingLink ? (
+                        <Button asChild>
+                          <a href={selectedConsultation.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a>
+                        </Button>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">The officer has not provided a meeting link yet.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Messages */}
               <div className="mb-6">

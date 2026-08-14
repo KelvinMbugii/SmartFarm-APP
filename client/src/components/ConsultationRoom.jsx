@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,16 +46,7 @@ export default function ConsultationRoom({ userProfile, onClose }) {
 
   const isRequester = user?.role === "farmer" || user?.role === "agripreneur" || user?.role === "trader";
 
-  useEffect(() => {
-    fetchConsultations();
-    if (isRequester) {
-      fetchOfficers();
-    } else {
-      setLoading(false);
-    }
-  }, [user?.role]);
-
-  const fetchConsultations = async () => {
+  const fetchConsultations = useCallback(async () => {
     setLoading(true);
     try {
       const data = await consultationService.getConsultations();
@@ -67,16 +58,25 @@ export default function ConsultationRoom({ userProfile, onClose }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchOfficers = async () => {
+  const fetchOfficers = useCallback(async () => {
     try {
       const data = await consultationService.getAvailableOfficers();
       setOfficers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching officers:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchConsultations();
+    if (isRequester) {
+      fetchOfficers();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.role, isRequester, fetchConsultations, fetchOfficers]);
 
   const handleCreateConsultation = async () => {
     try {

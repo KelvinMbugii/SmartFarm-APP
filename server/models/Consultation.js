@@ -33,10 +33,13 @@ const consultationSchema = new mongoose.Schema({
     },
     consultationType: {
         type: String,
-        enum: ['in-person', 'video-call', 'phone-call', 'chat'],
+        enum: ['physical', 'virtual', 'hybrid', 'in-person', 'video-call', 'phone-call', 'chat'],
         default: 'chat'
     },
     location: {
+        type: String
+    },
+    meetingLink: {
         type: String
     },
     notes: {

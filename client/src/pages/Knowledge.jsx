@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,12 +42,7 @@ const Knowledge = () => {
     tags: ""
   });
 
-  useEffect(() => {
-    fetchArticles();
-    fetchCategories();
-  }, [selectedCategory, searchTerm]);
-
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
@@ -62,16 +57,21 @@ const Knowledge = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchTerm]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const data = await knowledgeService.getCategories();
       setCategories(data);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchArticles();
+    fetchCategories();
+  }, [fetchArticles, fetchCategories]);
 
   const handleCreateArticle = async () => {
     try {

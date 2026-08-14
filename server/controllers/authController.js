@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const formatValidationError = require("../utils/formatValidationError");
 
+
 const CANONICAL_ROLES = ["farmer", "agripreneur", "officer", "admin"];
 
 const LEGACY_ROLE_MAP = {
@@ -81,6 +82,8 @@ const register = async (req, res) => {
     });
   }
 };
+
+
 
 module.exports = {
   register,

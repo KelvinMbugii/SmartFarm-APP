@@ -66,6 +66,10 @@ router.post('/', auth.protect, async (req, res) => {
 
         const { officerId, subject, description, consultationType, scheduledDate, scheduledTime } = req.body;
 
+        if (!subject || !description) {
+            return res.status(400).json({ error: 'Subject and description are required' });
+        }
+
         // Verify officer exists
         const officer = await User.findById(officerId);
         if (!officer || officer.role !== 'officer') {
@@ -74,7 +78,7 @@ router.post('/', auth.protect, async (req, res) => {
 
         const normalizedType = consultationType || 'chat';
 
-        if ((normalizedType === 'video-call' || normalizedType === 'in-person') && (!scheduledDate || !scheduledTime)) {
+        if ((normalizedType === 'video-call' || normalizedType === 'in-person' || normalizedType === 'virtual' || normalizedType === 'physical' || normalizedType === 'hybrid') && (!scheduledDate || !scheduledTime)) {
             return res.status(400).json({ error: 'Scheduled date and time are required for this consultation type' });
         }
 
@@ -160,12 +164,14 @@ router.put('/:id', auth.protect, async (req, res) => {
             return res.status(403).json({ error: 'Not authorized' });
         }
 
-        // Officers can update status, scheduled date, notes
+        // Officers can update status, scheduled date, notes, meetingLink, and type
         if (isOfficer || req.user.role === 'admin') {
             if (req.body.status) consultation.status = req.body.status;
             if (req.body.scheduledDate) consultation.scheduledDate = new Date(req.body.scheduledDate);
             if (req.body.scheduledTime) consultation.scheduledTime = req.body.scheduledTime;
             if (req.body.notes) consultation.notes = req.body.notes;
+            if (req.body.meetingLink !== undefined) consultation.meetingLink = req.body.meetingLink;
+            if (req.body.consultationType) consultation.consultationType = req.body.consultationType;
         }
 
         // Farmers can update description

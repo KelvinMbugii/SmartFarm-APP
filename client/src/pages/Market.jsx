@@ -1,134 +1,175 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Search, TrendingUp, TrendingDown, Bell, Minus } from 'lucide-react';
-import PriceAlertModal from '@/components/PriceAlertModal';
-import marketService from '@/services/MarketService.jsx';
+import React, { useState, useEffect, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Search, TrendingUp, TrendingDown, Bell, Minus } from "lucide-react";
+import PriceAlertModal from "@/components/PriceAlertModal";
+import marketService from "@/services/MarketService.jsx";
+
+// Import custom hooks and store
+import { useMarketData } from "@/hooks/useMarketData";
+import { useMarketStore } from "@/store/useMarketStore";
 
 const Market = () => {
-  const [prices, setPrices] = useState([]);
+  const {
+    searchTerm,
+    setSearchTerm,
+    selectedCommodity,
+    setSelectedCommodity,
+    useLivePrices,
+    toggleLivePrices,
+    alertModalOpen,
+    alertCommodity,
+    setAlertModalOpen,
+    openAlertModal,
+    resetFilters
+  } = useMarketStore();
+
   const [commodities, setCommodities] = useState([]);
   const [trends, setTrends] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCommodity, setSelectedCommodity] = useState('all');
-  const [alertModalOpen, setAlertModalOpen] = useState(false);
-  const [alertCommodity, setAlertCommodity] = useState('Rice');
 
+  // Load commodities on mount
   useEffect(() => {
+    const fetchCommodities = async () => {
+      try{
+        const data = await marketService.getCommodities();
+        setCommodities(data);
+      } catch (error){
+        console.error("Error fetching commodities:", error);
+        setCommodities(["Rice", "Wheat", "Corn", "Soyabeans", "Cotton", "Sugar"]);
+      }
+    };
     fetchCommodities();
   }, []);
 
+  // Use Custom Hook for Data Fetching
+  const { data: prices, loading, error } = useMarketData(selectedCommodity, useLivePrices);
+
+  // Load trends whenever commodity changes
   useEffect(() => {
-    fetchMarketPrices();
-    if (selectedCommodity && selectedCommodity !== 'all') {
-      fetchPriceTrends();
-    } else {
-      setTrends([]);
-    }
+    let cancelled = false;
+
+    const fetchPriceTrends = async () => {
+      if (!selectedCommodity || selectedCommodity === "all"){
+        setTrends([]);
+        return;
+      }
+
+      try {
+        const data = await marketService.getPriceTrends(selectedCommodity);
+        if (!cancelled) {
+          setTrends(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Error fetching price trends:", error);
+          setTrends([]);
+        }
+      }
+    };
+
+    fetchPriceTrends();
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCommodity]);
 
-  const fetchMarketPrices = async () => {
-    setLoading(true);
-    try {
-      const data = await marketService.getMarketPrices(
-        selectedCommodity !== 'all' ? selectedCommodity : ''
-      );
-      setPrices(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Error fetching market prices:', error);
-      setPrices(marketService.getMockMarketData());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCommodities = async () => {
-    try {
-      const data = await marketService.getCommodities();
-      setCommodities(data);
-    } catch (error) {
-      console.error('Error fetching commodities:', error);
-      setCommodities(['Rice', 'Wheat', 'Corn', 'Soybeans', 'Cotton', 'Sugar']);
-    }
-  };
-
-  const fetchPriceTrends = async () => {
-    try {
-      const data = await marketService.getPriceTrends(selectedCommodity);
-      setTrends(data);
-    } catch (error) {
-      console.error('Error fetching price trends:', error);
-      setTrends([]);
-    }
-  };
-
-  const openAlertModal = (commodity) => {
+  const handleOpenAlertModal = (commodity) => {
     const fallbackCommodity =
       commodity ||
-      (selectedCommodity !== 'all' && selectedCommodity) ||
+      (selectedCommodity !== "all" && selectedCommodity) ||
       commodities?.[0] ||
-      'Rice';
-    setAlertCommodity(fallbackCommodity);
-    setAlertModalOpen(true);
+      "Rice";
+    openAlertModal(fallbackCommodity);
   };
 
   const getTrendIcon = (trend) => {
     switch (trend) {
-      case 'up': return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case 'down': return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default: return <Minus className="w-4 h-4 text-gray-500" />;
+      case "up":
+        return <TrendingUp className="w-4 h-4 text-green-500" />;
+      case "down":
+        return <TrendingDown className="w-4 h-4 text-red-500" />;
+      default:
+        return <Minus className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getTrendColor = (trend) => {
     switch (trend) {
-      case 'up': return 'text-green-600';
-      case 'down': return 'text-red-600';
-      default: return 'text-gray-600';
+      case "up":
+        return "text-green-600";
+      case "down":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
     }
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+  // Price formatting in Kenyan Shilling
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
     }).format(price);
-  };
 
-  const filteredPrices = prices.filter(price => {
-    const commodityText = (price.commodity || '').toLowerCase();
-    const varietyText = (price.variety || '').toLowerCase();
-    const marketText = (price.market || '').toLowerCase();
+  const filteredPrices = useMemo(() => {
     const term = searchTerm.toLowerCase();
-
-    return (
-      commodityText.includes(term) ||
-      varietyText.includes(term) ||
-      marketText.includes(term)
-    );
-  });
+    return prices.filter((price) => {
+      const commodityText = (price.commodity || "").toLowerCase();
+      const varietyText = (price.variety || "").toLowerCase();
+      const marketText = (price.market || "").toLowerCase();
+      return (
+        commodityText.includes(term) ||
+        varietyText.includes(term) ||
+        marketText.includes(term)
+      );
+    });
+  }, [prices, searchTerm]);
 
   return (
     <div className="space-y-6">
+      {/* Header & Live Toggle */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Market Prices</h1>
           <p className="text-muted-foreground mt-2">
-            Real-time commodity prices and market trends
+            {useLivePrices
+              ? "Live commodity prices from UjuziKilimo (KES)"
+              : "Stored market prices (KES)"}
           </p>
         </div>
-        <Button
-          className="bg-primary hover:bg-primary/90"
-          onClick={() => openAlertModal(selectedCommodity)}
-        >
-          <Bell className="w-4 h-4 mr-2" />
-          Set Price Alert
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => handleOpenAlertModal(selectedCommodity)}
+          >
+            <Bell className="w-4 h-4 mr-2" /> Set Price Alert
+          </Button>
+          <Button
+            variant={useLivePrices ? "outline" : "default"}
+            onClick={toggleLivePrices}
+          >
+            {useLivePrices ? "Stored Prices" : "Live Prices"}
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -147,29 +188,27 @@ const Market = () => {
                 className="pl-10"
               />
             </div>
-            
-            <Select value={selectedCommodity} onValueChange={setSelectedCommodity}>
+
+            <Select
+              value={selectedCommodity}
+              onValueChange={setSelectedCommodity}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="All Commodities" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Commodities</SelectItem>
-                {commodities
-                  .filter(Boolean)
-                  .map((commodity) => (
-                    <SelectItem key={commodity} value={commodity}>
-                    {commodity}
+                {commodities.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
                   </SelectItem>
-                  ))}
+                ))}
               </SelectContent>
             </Select>
-            
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSelectedCommodity('all');
-                setSearchTerm('');
-              }}
+
+            <Button
+              variant="outline"
+              onClick={resetFilters}
             >
               Clear Filters
             </Button>
@@ -177,12 +216,19 @@ const Market = () => {
         </CardContent>
       </Card>
 
-      {/* Price Chart */}
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md flex items-center justify-between">
+          <span>Failed to fetch live prices: {error}. Using cached/fallback data.</span>
+        </div>
+      )}
+
+      {/* Price Trend Chart */}
       {trends.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>
-              Price Trend - {selectedCommodity || 'All Commodities'}
+              Price Trend - {selectedCommodity || "All Commodities"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -190,25 +236,30 @@ const Market = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trends}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
+                    tickFormatter={(value) =>
+                      new Date(value).toLocaleDateString()
+                    }
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `$${value}`}
+                    tickFormatter={(v) => formatPrice(v)}
                   />
-                  <Tooltip 
-                    formatter={(value) => [formatPrice(value), 'Price']}
-                    labelFormatter={(label) => `Date: ${new Date(label).toLocaleDateString()}`}
+                  <Tooltip
+                    formatter={(value) => [formatPrice(value), "Price"]}
+                    labelFormatter={(label) =>
+                      `Date: ${new Date(label).toLocaleDateString()}`
+                    }
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="price" 
-                    stroke="#10B981" 
+                  <Line
+                    type="monotone"
+                    dataKey="price"
+                    stroke="#10B981"
                     strokeWidth={2}
-                    dot={{ fill: '#10B981', strokeWidth: 2 }}
+                    dot={false}
+                    activeDot={{ r: 6 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -235,14 +286,12 @@ const Market = () => {
           ) : filteredPrices.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                No price data available for the selected filters.
+                No price data available for selected filters.
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredPrices.map((price, index) => {
-                const changeValue = Number(price.change || 0);
-                return (
+              {filteredPrices.map((price, index) => (
                 <div
                   key={price.id || price._id || index}
                   className="border rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -251,13 +300,20 @@ const Market = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
                         <h3 className="font-semibold text-lg">
-                          {price.commodity} - {price.variety || 'Standard'}
+                          {price.commodity} - {price.variety || "Standard"}
                         </h3>
                         <div className="flex items-center space-x-1">
                           {getTrendIcon(price.trend)}
-                          <span className={`text-sm font-medium ${getTrendColor(price.trend)}`}>
-                            {changeValue > 0 ? '+' : ''}
-                            {Number.isFinite(changeValue) ? changeValue.toFixed(1) : '0.0'}%
+                          <span
+                            className={`text-sm font-medium ${getTrendColor(
+                              price.trend,
+                            )}`}
+                          >
+                            {price.change > 0 ? "+" : ""}
+                            {Number.isFinite(price.change)
+                              ? price.change.toFixed(1)
+                              : "0.0"}
+                            %
                           </span>
                         </div>
                       </div>
@@ -265,7 +321,6 @@ const Market = () => {
                         {price.market}
                       </p>
                     </div>
-                    
                     <div className="text-right">
                       <p className="text-2xl font-bold text-primary">
                         {formatPrice(price.price)}
@@ -275,7 +330,7 @@ const Market = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 flex items-center justify-between">
                     <Badge variant="outline" className="text-xs">
                       Last updated: {new Date(price.date).toLocaleDateString()}
@@ -283,17 +338,18 @@ const Market = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => openAlertModal(price.commodity)}
+                      onClick={() => handleOpenAlertModal(price.commodity)}
                     >
                       Set Alert
                     </Button>
                   </div>
                 </div>
-              )})}
+              ))}
             </div>
           )}
         </CardContent>
       </Card>
+
       <PriceAlertModal
         isOpen={alertModalOpen}
         onClose={() => setAlertModalOpen(false)}
@@ -303,4 +359,4 @@ const Market = () => {
   );
 };
 
- export default Market;
+export default Market;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,20 +51,7 @@ const Forums = () => {
 
   const [moderationQueue, setModerationQueue] = useState([]);
 
-  useEffect(() => {
-    fetchPosts();
-    fetchCategories();
-  }, [selectedCategory, searchTerm, sortBy]);
-
-  useEffect(() => {
-    if (!['officer', 'admin'].includes(user?.role)) return;
-    forumService
-      .getReports('open')
-      .then((data) => setModerationQueue(data || []))
-      .catch(() => setModerationQueue([]));
-  }, [user?.role]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
@@ -80,16 +67,29 @@ const Forums = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, searchTerm, sortBy]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const data = await forumService.getCategories();
       setCategories(data);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPosts();
+    fetchCategories();
+  }, [fetchPosts, fetchCategories]);
+
+  useEffect(() => {
+    if (!['officer', 'admin'].includes(user?.role)) return;
+    forumService
+      .getReports('open')
+      .then((data) => setModerationQueue(data || []))
+      .catch(() => setModerationQueue([]));
+  }, [user?.role]);
 
   const handleViewPost = async (id) => {
     try {

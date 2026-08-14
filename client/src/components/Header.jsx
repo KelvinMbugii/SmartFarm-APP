@@ -1,103 +1,107 @@
 import React, { useState } from "react";
 import {
   Menu,
+  X,
   Bell,
   Settings,
   Search,
   Sun,
   Moon,
   ChevronDown,
-  User,
 } from "lucide-react";
-import profileImage from "@/assets/logo.png";
+import profileImage from "@/assets/logo.jpeg";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-const Header = ({ isSidebarOpen, setIsSidebarOpen }) => {
+const Header = ({ isSidebarOpen, setIsSidebarOpen, toggleSidebar }) => {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="w-full bg-white dark:bg-[#111827] shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between px-6 py-3">
-        {/* Left: Sidebar toggle + search */}
-        <div className="flex items-center gap-4">
-          {/* Sidebar toggle */}
+    <header className="w-full bg-white dark:bg-[#2D5A45] shadow-sm border-b border-[#E0DCD7] dark:border-[#3D6A55]">
+      <div className="flex items-center justify-between px-4 md:px-6 py-3">
+        <div className="flex items-center gap-3 md:gap-4">
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={toggleSidebar}
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10 md:hidden"
           >
-            <Menu className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+            {isSidebarOpen ? (
+              <X className="w-6 h-6 text-[#1B4332] dark:text-white" />
+            ) : (
+              <Menu className="w-6 h-6 text-[#1B4332] dark:text-white" />
+            )}
           </button>
 
-          {/* Search bar */}
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
-            <Search className="w-4 h-4 text-gray-500 mr-2" />
+          <div className="flex items-center bg-[#F8F5F2] dark:bg-white/10 px-3 md:px-4 py-2 rounded-full">
+            <Search className="w-4 h-4 text-[#1B4332]/50 mr-2" />
             <input
               type="text"
-              placeholder="Search crops, weather, markets..."
-              className="bg-transparent outline-none text-sm w-48 dark:text-gray-200"
+              placeholder="Search..."
+              className="bg-transparent outline-none text-sm w-24 md:w-48 text-[#1B4332] dark:text-white placeholder:text-[#1B4332]/40"
             />
           </div>
         </div>
 
-        {/* Right: Icons + profile */}
-        <div className="flex items-center gap-4">
-          {/* Theme toggle */}
+        <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10"
           >
             {theme === "dark" ? (
-              <Sun className="w-5 h-5 text-yellow-400" />
+              <Sun className="w-5 h-5 text-[#E9B44C]" />
             ) : (
-              <Moon className="w-5 h-5 text-gray-600" />
+              <Moon className="w-5 h-5 text-[#1B4332]" />
             )}
           </button>
 
-          {/* Notifications */}
-          <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-            <Bell className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <button 
+            onClick={() => navigate("/notifications")}
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10 relative"
+          >
+            <Bell className="w-5 h-5 text-[#1B4332] dark:text-white" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-[#E9B44C] rounded-full"></span>
           </button>
 
-          {/* Settings */}
-          <button className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-            <Settings className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          <button 
+            onClick={() => navigate("/profile")}
+            className="p-2 rounded-xl hover:bg-[#F8F5F2] dark:hover:bg-white/10"
+          >
+            <Settings className="w-5 h-5 text-[#1B4332] dark:text-white" />
           </button>
 
-          {/* User profile */}
-          <div className="relative">
+          <div className="relative ml-1 md:ml-2">
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="flex items-center gap-2 p-1 rounded-full hover:bg-[#F8F5F2] dark:hover:bg-white/10"
             >
               <img
                 src={profileImage}
                 alt="Profile"
-                className="w-8 h-8 rounded-full object-cover"
+                className="w-8 md:w-10 h-8 md:h-10 rounded-full object-cover border-2 border-[#E9B44C]"
               />
               <div className="hidden sm:flex flex-col items-start">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                <span className="text-sm font-semibold text-[#1B4332] dark:text-white font-heading">
                   {user?.name || "Guest"}
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">
+                <span className="text-xs text-[#1B4332]/60 dark:text-white/60 capitalize font-body">
                   {user?.role || "user"}
                 </span>
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-500" />
+              <ChevronDown className="w-4 h-4 text-[#1B4332]/60 dark:text-white/60" />
             </button>
 
-            {/* Dropdown */}
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#2D5A45] border border-[#E0DCD7] dark:border-[#3D6A55] rounded-xl shadow-lg z-50 overflow-hidden">
                 <button
                   onClick={() => {
                     logout();
                     setMenuOpen(false);
                   }}
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="block w-full text-left px-4 py-3 text-sm text-[#1B4332] dark:text-white hover:bg-[#F8F5F2] dark:hover:bg-white/10 font-body"
                 >
                   Log out
                 </button>

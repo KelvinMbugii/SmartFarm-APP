@@ -85,7 +85,7 @@
 
 
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import io from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
@@ -103,6 +103,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const { user, token } = useAuth();
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (user && token) {
@@ -119,16 +120,19 @@ export const SocketProvider = ({ children }) => {
         setIsConnected(false);
       });
 
+      socketRef.current = newSocket;
       setSocket(newSocket);
 
       return () => {
         newSocket.close();
+        socketRef.current = null;
       };
     } else {
-      if (socket) {
-        socket.close();
-        setSocket(null);
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
       }
+      setSocket(null);
       setIsConnected(false);
     }
   }, [user, token]);

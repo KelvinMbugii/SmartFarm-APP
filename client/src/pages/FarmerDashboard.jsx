@@ -15,9 +15,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import ConsultationRoom from "@/components/ConsultationRoom";
+//import ConsultationRoom from "@/components/ConsultationRoom";
+import consultationService from "@/services/ConsultationService";
 import marketplaceApi from "@/services/MarketplaceService";
 import { toast } from "sonner";
+import farmerDashboardImage from "@/assets/farmer-dashboard-image.png";
 
 const MOCK_MY_LISTINGS = [
   { _id: "m1", name: "Fresh Tomatoes", stockQuantity: 50, isOutOfStock: false },
@@ -29,10 +31,11 @@ export default function FarmerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [showConsultation, setShowConsultation] = useState(false);
+  //const [showConsultation, setShowConsultation] = useState(false);
   const [loadingListings, setLoadingListings] = useState(true);
   const [useMock, setUseMock] = useState(false);
   const [myListings, setMyListings] = useState([]);
+  const [upcomingConsultations, setUpcomingConsultations] = useState([]);
 
   useEffect(() => {
     const run = async () => {
@@ -42,12 +45,20 @@ export default function FarmerDashboard() {
         const { data } = await marketplaceApi.getMyProducts();
         setMyListings(Array.isArray(data) ? data : []);
         setUseMock(false);
-      } catch (e) {
+      } catch{
         setMyListings(MOCK_MY_LISTINGS);
         setUseMock(true);
         toast.message("Using mock listings (debugging)");
       } finally {
         setLoadingListings(false);
+      }
+
+      try {
+        const consults = await consultationService.getConsultations();
+        const upcoming = consults.filter(c => c.status === 'scheduled' || c.status === 'pending').slice(0, 3);
+        setUpcomingConsultations(upcoming);
+      } catch (err) {
+        console.error("Failed to load consultations", err);
       }
     };
     run();
@@ -88,6 +99,14 @@ export default function FarmerDashboard() {
             Sell Produce
           </Button>
         </div>
+      </div>
+
+      <div className="w-full rounded-[20px] overflow-hidden shadow-lg">
+        <img
+          src={farmerDashboardImage}
+          alt="Farmer Dashboard"
+          className="w-full h-48 md:h-64 object-cover"
+        />
       </div>
 
       {/* Quick Stats */}
@@ -137,6 +156,62 @@ export default function FarmerDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Upcoming Consultations */}
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <CardTitle>Upcoming Consultations</CardTitle>
+            <CardDescription>
+              Your scheduled meetings with agricultural experts.
+            </CardDescription>
+          </div>
+          <Button variant="outline" onClick={() => navigate("/consultations")} className="gap-2">
+            View All History
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {upcomingConsultations.length > 0 ? (
+            <div className="grid gap-4">
+              {upcomingConsultations.map((consultation) => (
+                <div key={consultation._id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg gap-4">
+                  <div>
+                    <h4 className="font-semibold">{consultation.subject}</h4>
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <span className="capitalize">{consultation.consultationType.replace("-", " ")}</span>
+                      • 
+                      {consultation.officer?.name || "Pending Officer"}
+                    </p>
+                    {consultation.scheduledDate && (
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(consultation.scheduledDate).toLocaleDateString()} at {consultation.scheduledTime}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="capitalize">
+                      {consultation.status}
+                    </Badge>
+                    {(consultation.consultationType === 'virtual' || consultation.consultationType === 'video-call' || consultation.consultationType === 'hybrid') && consultation.meetingLink && (
+                      <Button asChild size="sm">
+                        <a href={consultation.meetingLink} target="_blank" rel="noopener noreferrer">Join Meeting</a>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6 text-muted-foreground">
+              <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>No upcoming consultations.</p>
+              <Button variant="link" onClick={() => navigate("/consultations")} className="mt-2">
+                Book a new consultation
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Produce management CTA */}
       <Card>
@@ -204,7 +279,8 @@ export default function FarmerDashboard() {
         <CardContent className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            onClick={() => setShowConsultation(true)}
+            //onClick={() => setShowConsultation(true)}
+            onClick={() => navigate("/consultations")}
             className="gap-2"
           >
             <MessageSquare className="h-4 w-4" />
@@ -225,12 +301,12 @@ export default function FarmerDashboard() {
         </CardContent>
       </Card>
 
-      {showConsultation && (
+      {/* {showConsultation && (
         <ConsultationRoom
           userProfile={user}
           onClose={() => setShowConsultation(false)}
         />
-      )}
+      )} */}
     </div>
   );
 }

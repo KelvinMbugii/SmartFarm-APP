@@ -4,7 +4,7 @@ const reportSchema = new mongoose.Schema(
   {
     reporter: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
       required: true,
     },
     reason: {
@@ -27,7 +27,7 @@ const reportSchema = new mongoose.Schema(
     },
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
     },
     reviewedAt: Date,
     note: String,
@@ -39,7 +39,7 @@ const commentSchema = new mongoose.Schema(
   {
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
       required: true,
     },
     content: {
@@ -49,7 +49,7 @@ const commentSchema = new mongoose.Schema(
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        ref: 'User',
       },
     ],
     verifiedAnswer: {
@@ -58,14 +58,14 @@ const commentSchema = new mongoose.Schema(
     },
     verifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
     },
     verifiedAt: Date,
     replies: [
       {
         author: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: 'user',
+          ref: 'User',
           required: true,
         },
         content: {
@@ -75,7 +75,7 @@ const commentSchema = new mongoose.Schema(
         likes: [
           {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'user',
+            ref: 'User',
           },
         ],
         createdAt: {
@@ -103,7 +103,7 @@ const forumPostSchema = new mongoose.Schema(
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
       required: true,
     },
     category: {
@@ -136,7 +136,7 @@ const forumPostSchema = new mongoose.Schema(
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        ref: 'User',
       },
     ],
     comments: [commentSchema],
@@ -147,7 +147,7 @@ const forumPostSchema = new mongoose.Schema(
     },
     pinnedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'user',
+      ref: 'User',
     },
     pinnedAt: Date,
     solved: {

@@ -1,151 +1,138 @@
 import api from "./api";
 
 class MarketService {
+  // Fetch stored market prices
   async getMarketPrices(commodity = "", market = "", days = 30) {
     try {
       const response = await api.get("/api/market/prices", {
         params: {
-          commodity: commodity || undefined,
+          commodity: commodity || "all", // fetch all if empty
           market: market || undefined,
           days,
         },
       });
-
-      return response.data || [];
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error("Market API error:", error);
-      // Fallback to mock data
       return this.getMockMarketData();
     }
   }
 
+  // Fetch live market prices
+  async getLiveMarketPrices(commodity = "", market = "", days = 30) {
+    try {
+      const response = await api.get("/api/market/prices", {
+        params: {
+          commodity: commodity || "all",
+          market: market || undefined,
+          days,
+          live: true,
+        },
+      });
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      if ( error?.response?.status === 502){
+        console.warn("Live market API unavailable; using mock market data.");
+      } else {
+        console.error("Live market API error:", error);
+      }
+      return this.getMockMarketData();
+    }
+  }
+
+  // Fetch list of commodities
   async getCommodities() {
     try {
       const response = await api.get("/api/market/commodities");
       return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       console.error("Market commodities error:", error);
-      return ["Rice", "Wheat", "Corn", "Soybeans", "Cotton", "Sugar"];
+      // Default fallback list
+      return [
+        "Rice",
+        "Wheat",
+        "Corn",
+        "Soybeans",
+        "Sugar",
+        "Coffee",
+        "Tea",
+        "Cotton",
+        "Sorghum",
+      ];
     }
   }
 
-  async getPriceTrends(commodity = "") {
-    try {
+  async getPriceTrends(commodity = ""){
+    try{
       const response = await api.get("/api/market/trends", {
-        params: { commodity: commodity || undefined },
+        params: {commodity: commodity || undefined },
       });
 
-      return (
-        response.data?.map((item) => ({
-          date: item._id?.date,
-          price: item.avgPrice,
-          commodity: item._id?.commodity,
-        })) || []
-      );
-    } catch (error) {
-      console.error("Market trends error:", error);
-      // Generate mock trend data
-      const fallback = Array.from({ length: 30 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return {
-          date: date.toISOString().split("T")[0],
-          price: 2000 + Math.random() * 800,
-          commodity: commodity || "Rice",
-        };
-      }).reverse();
-      return fallback;
+      return Array.isArray(response.data)
+        ? response.data.map((item) => ({
+          date: item?._id?.date,
+          commodity: item?._id?.commodity,
+          price: Number(item?.avgPrice || 0),
+          sampleSize: Number(item?.count || 0),
+        }))
+      : [];
+    } catch(error) {
+      console.error("Market trends API error:", error);
+      return [];
     }
   }
 
+  async createPriceAlert(commodity, targetPrice, condition, options = {}) {
+    const payload = {
+      commodity,
+      targetPrice,
+      condition,
+      email: options.email || "",
+      sms: Boolean(options.sms),
+      phone: options.phone || "",
+    };
+
+    const response = await api.post("/api/market/alerts", payload);
+    return response.data;
+  }
+
+  async getPriceAlerts() {
+    const response = await api.get("/api/market/alerts");
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  // Mock data for frontend demo/fallback
   getMockMarketData() {
     const commodities = [
       "Rice",
       "Wheat",
       "Corn",
       "Soybeans",
+      "Sugar",
+      "Coffee",
+      "Tea",
       "Cotton",
-      "Sugarcane",
+      "Sorghum",
     ];
     const markets = [
-      "Delhi",
-      "Mumbai",
-      "Kolkata",
-      "Chennai",
-      "Bangalore",
-      "Hyderabad",
+      "Nairobi",
+      "Mombasa",
+      "Kisumu",
+      "Eldoret",
+      "Kisii",
+      "Nyeri",
     ];
-
-    return commodities.map((commodity, index) => ({
-      id: (index + 1).toString(),
-      commodity,
+    return commodities.map((c, i) => ({
+      id: i + 1,
+      commodity: c,
       variety: "Premium",
-      market: markets[index % markets.length],
-      price: 2000 + Math.random() * 3000,
+      market: markets[i % markets.length],
+      price: 2000 + Math.random() * 2000, // random price
       unit: "per quintal",
       date: new Date().toISOString(),
       trend: Math.random() > 0.5 ? "up" : "down",
       change: parseFloat((Math.random() * 10 - 5).toFixed(1)),
     }));
-  }
-
-  async getPriceHistory(commodity, days = 30) {
-    try {
-      // Mock implementation - in real app, this would fetch historical data
-      const history = [];
-      const basePrice = 2500;
-
-      for (let i = days; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-
-        history.push({
-          date: date.toISOString().split("T")[0],
-          price: basePrice + (Math.random() - 0.5) * 500,
-          volume: Math.floor(Math.random() * 1000) + 100,
-        });
-      }
-
-      return history;
-    } catch (error) {
-      console.error("Price history error:", error);
-      return [];
-    }
-  }
-
-  async createPriceAlert(commodity, targetPrice, condition, options = {}) {
-    try {
-      // In a real app, this would save to backend
-      const alert = {
-        id: Date.now().toString(),
-        commodity,
-        targetPrice,
-        condition, // 'above' or 'below'
-        createdAt: new Date().toISOString(),
-        active: true,
-        notifyEmail: options.email || null,
-        notifyBySms: Boolean(options.sms),
-      };
-
-      // Store in localStorage for demo
-      const alerts = JSON.parse(localStorage.getItem("priceAlerts") || "[]");
-      alerts.push(alert);
-      localStorage.setItem("priceAlerts", JSON.stringify(alerts));
-
-      return alert;
-    } catch (error) {
-      console.error("Create alert error:", error);
-      throw error;
-    }
-  }
-
-  getPriceAlerts() {
-    try {
-      return JSON.parse(localStorage.getItem("priceAlerts") || "[]");
-    } catch (error) {
-      console.error("Get alerts error:", error);
-      return [];
-    }
   }
 }
 

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import AgripreneurDashboard from "./pages/AgripreneurDashboard";
 import FarmerDashboard from "./pages/FarmerDashboard";
@@ -28,11 +29,14 @@ import Consultations from "./pages/Consultations";
 import Forums from "./pages/Forums";
 import MyOrders from "./pages/MyOrders";
 import Analytics from "./pages/Analytics";
+import AIAssistant from "./pages/AIAssistant";
 import Notifications from "./pages/Notifications";
 import SellProduce from "./pages/SellProduce";
 import PaymentMethods from "./pages/PaymentMethods";
 import CustomerMessages from "./pages/CustomerMessages";
 import OfficerSettings from "./pages/OfficerSettings";
+import AdminMarketplaceControl from "./pages/AdminMarketplaceControl";
+import SystemAlerts from "./pages/SystemAlerts";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -48,12 +52,11 @@ function App() {
             <div className="min-h-screen bg-neutral-light dark:bg-neutral-dark text-neutral-dark dark:text-neutral-light transition-colors duration-300">
               <Routes>
                 {/* Public routes */}
+                <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
-                
-                <Route path="/" element={<Navigate to="/login" replace />} />
                 
 
                 {/* Protected routes */}
@@ -101,10 +104,12 @@ function App() {
                   <Route path="knowledge" element={<Knowledge />} />
                   <Route path="consultations" element={<Consultations />} />
                   <Route path="chat" element={<Chat />} />
+                  <Route path="chat/:chatId" element={<Chat />} />
                   <Route path="market" element={<Market />} />
                   <Route path="marketplace" element={<Marketplace/>}/>
                   <Route path="my-orders" element={<MyOrders />} />
-                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="analytics" element={< ProtectedRoute allowedRoles={["admin"]}><Analytics /></ProtectedRoute>} />
+                  <Route path="ai-assistant" element={<AIAssistant />} />
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="sell-produce" element={<SellProduce />} />
                   <Route path="payment-methods" element={<PaymentMethods />} />
@@ -113,6 +118,8 @@ function App() {
                   <Route path="weather" element={<Weather />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="officer-settings" element={<ProtectedRoute allowedRoles={["officer", "admin"]}><OfficerSettings/> </ProtectedRoute>}/>
+                  <Route path="marketplace-control" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMarketplaceControl /> </ProtectedRoute>}/>
+                  <Route path="system-alerts" element={<ProtectedRoute allowedRoles={["admin"]}><SystemAlerts /></ProtectedRoute>} />
                 </Route>
               </Routes>
               <Toaster />

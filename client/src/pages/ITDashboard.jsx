@@ -1,390 +1,345 @@
-// // import { useEffect, useState } from "react";
-// // import { useNavigate } from "react-router-dom";
-
-// // export default function AdminDashboard(){
-// //     const [ user, setUser ] = useState(null);
-// //     const navigate = useNavigate();
-
-// //     useEffect(() => {
-// //         const token = localStorage.getItem("token");
-
-// //         if(!token) {
-// //             navigate("/login");
-// //             return;
-// //         }
-
-// //         fetch("http://localhost:5000/api/auth/me", {
-// //             headers: { Authorization: `Bearer ${token}`}
-// //         })
-// //          .then(res => res.json())
-// //          .then(data => {
-// //             if (data.role !== "admin"){
-// //                 navigate("/")
-// //             }else {
-// //                 setUser(data);
-// //             }
-// //          });
-// //     }, [navigate]);
-
-// //     if (!user) return <p>Loading...</p>;
-
-// //     return (
-// //         <div>
-// //             <h1>Welcome, {user.email}</h1>
-// //             <h2>Admin Dashboard</h2>
-// //             <p>Here you can Manage users and view activities</p>
-// //         </div>
-// //     );
-// // }
-
-
-
-// import React, { useEffect, useState, useCallback } from "react";
-// import { Line, Doughnut } from "react-chartjs-2";
+// import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// import { Badge } from "@/components/ui/badge";
+// import { Button } from "@/components/ui/button";
 // import {
-//   Chart as ChartJS,
-//   CategoryScale,
-//   LinearScale,
-//   LineElement,
-//   PointElement,
-//   ArcElement,
-//   Title,
-//   Tooltip,
-//   Legend,
-// } from "chart.js";
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
+// import api from "@/services/api";
 // import {
-//   MdRefresh,
-//   MdDeviceHub,
-//   MdOutlineWarningAmber,
-//   MdAnalytics,
-// } from "react-icons/md";
+//   Activity,
+//   BarChart3,
+//   Pin,
+//   RefreshCcw,
+//   Shield,
+//   Trash2,
+//   UserCheck,
+//   UserX,
+//   Users,
+// } from "lucide-react";
+// import { useLocation } from "react-router-dom";
 
-// ChartJS.register(
-//   CategoryScale,
-//   LinearScale,
-//   LineElement,
-//   PointElement,
-//   ArcElement,
-//   Title,
-//   Tooltip,
-//   Legend
-// );
-
-// const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
-// /**
-//  * IT Dashboard (focused, modular, step-by-step ready)
-//  *
-//  * - Overview card area
-//  * - Sensor trends (line)
-//  * - Device distribution (doughnut)
-//  * - Alerts table
-//  * - Auto-refresh toggle + manual refresh
-//  *
-//  * Next small step suggestions: "devices controls", "chart tooltip improvements",
-//  * "add server health card", "export CSV".
-//  */
+// function MetricCard({ title, value, helper, icon: Icon }) {
+//   return (
+//     <Card>
+//       <CardContent className="pt-6">
+//         <div className="flex items-start justify-between">
+//           <div>
+//             <p className="text-sm text-muted-foreground">{title}</p>
+//             <p className="text-2xl font-bold">{value}</p>
+//             {helper ? (
+//               <p className="text-xs text-muted-foreground mt-1">{helper}</p>
+//             ) : null}
+//           </div>
+//           <Icon className="h-5 w-5 text-amber-600" />
+//         </div>
+//       </CardContent>
+//     </Card>
+//   );
+// }
 
 // export default function ITDashboard() {
 //   const [overview, setOverview] = useState(null);
-//   const [devices, setDevices] = useState([]);
-//   const [alerts, setAlerts] = useState([]);
-//   const [analytics, setAnalytics] = useState(null);
-
+//   const [users, setUsers] = useState([]);
+//   const [posts, setPosts] = useState([]);
 //   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
+//   const [error, setError] = useState("");
+//   const location = useLocation();
+//   const usersSectionRef = useRef(null);
+//   const postsSectionRef = useRef(null);
 
-//   const [autoRefresh, setAutoRefresh] = useState(false);
-//   const [refreshIntervalMs] = useState(30_000); // 30s default
+//   const fetchDashboard = useCallback(async () => {
+//     setError("");
+//     setLoading(true);
 
-//   const token = localStorage.getItem("token") || "";
+//     try {
+//       const [overviewRes, usersRes, postsRes] = await Promise.all([
+//         api.get("/api/admin/overview"),
+//         api.get("/api/admin/users"),
+//         api.get("/api/admin/posts"),
+//       ]);
 
-//   const fetchAll = useCallback(
-//     async (showLoading = true) => {
-//       if (showLoading) {
-//         setLoading(true);
-//         setError(null);
-//       }
+//       setOverview(overviewRes.data);
+//       setUsers(usersRes.data || []);
+//       setPosts(postsRes.data || []);
+//     } catch (err) {
+//       setError(
+//         err.response?.data?.error || "Failed to load admin dashboard data.",
+//       );
+//     } finally {
+//       setLoading(false);
+//     }
+//   }, []);
 
-//       try {
-//         const headers = {
-//           Authorization: `Bearer ${token}`,
-//           "Content-Type": "application/json",
-//         };
-
-//         const [ovRes, devRes, alertsRes, analyticsRes] = await Promise.all([
-//           fetch(`${API_BASE}/it-dashboard/overview`, { headers }),
-//           fetch(`${API_BASE}/it-dashboard/devices`, { headers }),
-//           fetch(`${API_BASE}/it-dashboard/security-alerts?limit=20`, {
-//             headers,
-//           }),
-//           fetch(`${API_BASE}/it-dashboard/analytics?range=7d`, { headers }),
-//         ]);
-
-//         // Try to parse; each endpoint returns JSON shaped { success: true, data: ... } or similar
-//         const ovJson = ovRes.ok ? await ovRes.json() : null;
-//         const devJson = devRes.ok ? await devRes.json() : null;
-//         const alertsJson = alertsRes.ok ? await alertsRes.json() : null;
-//         const analyticsJson = analyticsRes.ok
-//           ? await analyticsRes.json()
-//           : null;
-
-//         if (!ovRes.ok) throw new Error(`Overview failed (${ovRes.status})`);
-//         if (!devRes.ok) throw new Error(`Devices failed (${devRes.status})`);
-//         if (!alertsRes.ok)
-//           throw new Error(`Alerts failed (${alertsRes.status})`);
-//         if (!analyticsRes.ok)
-//           throw new Error(`Analytics failed (${analyticsRes.status})`);
-
-//         setOverview(ovJson.data || ovJson); // support both shapes
-//         setDevices(devJson.data?.devices ?? devJson.data ?? []);
-//         setAlerts(alertsJson.data?.alerts ?? alertsJson.data ?? []);
-//         setAnalytics(analyticsJson.data ?? analyticsJson);
-//       } catch (err) {
-//         console.error("ITDashboard fetch error:", err);
-//         setError(err.message || "Failed to load dashboard data");
-//       } finally {
-//         setLoading(false);
-//       }
-//     },
-//     [token]
-//   );
-
-//   // Initial load
 //   useEffect(() => {
-//     fetchAll(true);
-//   }, [fetchAll]);
+//     fetchDashboard();
+//   }, [fetchDashboard]);
 
-//   // Auto refresh
 //   useEffect(() => {
-//     if (!autoRefresh) return;
-//     const id = setInterval(() => fetchAll(false), refreshIntervalMs);
-//     return () => clearInterval(id);
-//   }, [autoRefresh, fetchAll, refreshIntervalMs]);
+//     const params = new URLSearchParams(location.search);
+//     const view = params.get("view");
 
-//   // Simple refresh handler
-//   const handleRefresh = async () => fetchAll(true);
+//     if (view === "users") {
+//       usersSectionRef.current?.scrollIntoView({
+//         behavior: "smooth",
+//         block: "start",
+//       });
+//     }
+
+//     if (view === "posts") {
+//       postsSectionRef.current?.scrollIntoView({
+//         behavior: "smooth",
+//         block: "start",
+//       });
+//     }
+//   }, [location.search]);
+
+//   const handleToggleUser = async (userId, nextStatus) => {
+//     try {
+//       await api.patch(`/api/admin/users/${userId}/status`, {
+//         isActive: nextStatus,
+//       });
+//       setUsers((prev) =>
+//         prev.map((user) =>
+//           user._id === userId
+//             ? {
+//                 ...user,
+//                 isActive: nextStatus,
+//                 deactivatedAt: nextStatus ? null : new Date().toISOString(),
+//               }
+//             : user,
+//         ),
+//       );
+//     } catch (err) {
+//       setError(err.response?.data?.error || "Unable to update user status.");
+//     }
+//   };
+
+//   const handlePinPost = async (postId, pinned) => {
+//     try {
+//       await api.patch(`/api/admin/posts/${postId}/pin`, { pinned });
+//       setPosts((prev) =>
+//         prev.map((post) => (post._id === postId ? { ...post, pinned } : post)),
+//       );
+//     } catch (err) {
+//       setError(err.response?.data?.error || "Unable to update post status.");
+//     }
+//   };
+
+//   const handleDeletePost = async (postId) => {
+//     try {
+//       await api.delete(`/api/admin/posts/${postId}`);
+//       setPosts((prev) => prev.filter((post) => post._id !== postId));
+//     } catch (err) {
+//       setError(err.response?.data?.error || "Unable to delete post.");
+//     }
+//   };
+
+//   const metrics = useMemo(() => {
+//     const totals = overview?.totals || {};
+//     return [
+//       {
+//         title: "Total Users",
+//         value: totals.users ?? 0,
+//         helper: `${totals.activeUsers ?? 0} active accounts`,
+//         icon: Users,
+//       },
+//       {
+//         title: "System Health",
+//         value: `${totals.onlineUsers ?? 0} online`,
+//         helper: `${totals.deactivatedUsers ?? 0} deactivated accounts`,
+//         icon: Activity,
+//       },
+//       {
+//         title: "Forum Posts",
+//         value: totals.posts ?? 0,
+//         helper: `${totals.pinnedPosts ?? 0} pinned`,
+//         icon: BarChart3,
+//       },
+//       {
+//         title: "Moderation Alerts",
+//         value: totals.openReports ?? 0,
+//         helper: "Open reports requiring admin review",
+//         icon: Shield,
+//       },
+//     ];
+//   }, [overview]);
 
 //   if (loading) {
 //     return (
-//       <div className="p-6">
-//         <div className="text-center text-gray-600">Loading IT Dashboard…</div>
+//       <div className="p-6 text-sm text-muted-foreground">
+//         Loading admin dashboard...
 //       </div>
 //     );
 //   }
 
-//   if (error) {
-//     return (
-//       <div className="p-6">
-//         <div className="text-red-600 mb-4">Error: {error}</div>
-//         <div>
-//           <button
-//             onClick={handleRefresh}
-//             className="px-4 py-2 bg-blue-600 text-white rounded"
-//           >
-//             Retry
-//           </button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   // --- Chart data builders (safe defaults)
-//   const lineData = {
-//     labels: analytics?.timeLabels ?? [],
-//     datasets: [
-//       {
-//         label: "Soil Moisture (%)",
-//         data: analytics?.soilMoisture ?? [],
-//         borderColor: "#10B981",
-//         tension: 0.3,
-//         fill: false,
-//       },
-//       {
-//         label: "Temperature (°C)",
-//         data: analytics?.temperature ?? [],
-//         borderColor: "#3B82F6",
-//         tension: 0.3,
-//         fill: false,
-//       },
-//     ],
-//   };
-
-//   const deviceDoughnut = {
-//     labels: ["Active", "Inactive", "Error"],
-//     datasets: [
-//       {
-//         data: [
-//           overview?.activeDevices ??
-//             devices.filter((d) => d.status === "active").length,
-//           overview?.inactiveDevices ??
-//             devices.filter((d) => d.status === "inactive").length,
-//           overview?.errorDevices ??
-//             devices.filter((d) => d.status === "faulty").length,
-//         ],
-//         backgroundColor: ["#10B981", "#9CA3AF", "#EF4444"],
-//       },
-//     ],
-//   };
-
-//   // --- Simple subcomponents (extract later if you want)
-//   function MetricCard({ title, value, icon }) {
-//     return (
-//       <div className="bg-white rounded-lg p-4 shadow-sm border flex items-center gap-4">
-//         <div className="p-2 rounded-md bg-gray-100 text-2xl">{icon}</div>
-//         <div>
-//           <div className="text-sm text-gray-500">{title}</div>
-//           <div className="text-xl font-semibold text-gray-800">{value}</div>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   function AlertsTable({ items = [] }) {
-//     if (!items.length) {
-//       return <div className="text-sm text-gray-500 p-4">No active alerts</div>;
-//     }
-//     return (
-//       <div className="overflow-x-auto">
-//         <table className="min-w-full text-sm">
-//           <thead className="bg-gray-50 text-gray-600">
-//             <tr>
-//               <th className="p-3 text-left">Type</th>
-//               <th className="p-3 text-left">Message</th>
-//               <th className="p-3">Severity</th>
-//               <th className="p-3">Time</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {items.map((a) => (
-//               <tr key={a._id} className="border-b hover:bg-gray-50">
-//                 <td className="p-3 font-medium">
-//                   {a.category ?? a.type ?? "system"}
-//                 </td>
-//                 <td className="p-3 text-gray-600">{a.message}</td>
-//                 <td className="p-3">
-//                   <span
-//                     className={`px-2 py-1 rounded-full text-xs font-semibold ${
-//                       a.severity === "high"
-//                         ? "bg-red-100 text-red-700"
-//                         : a.severity === "medium"
-//                         ? "bg-yellow-100 text-yellow-700"
-//                         : "bg-green-100 text-green-700"
-//                     }`}
-//                   >
-//                     {a.severity ?? "low"}
-//                   </span>
-//                 </td>
-//                 <td className="p-3 text-gray-500">
-//                   {new Date(a.detectedAt ?? a.createdAt).toLocaleString()}
-//                 </td>
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     );
-//   }
-
-//   // --- Layout render
 //   return (
-//     <div className="space-y-6">
-//       {/* header / controls */}
-//       <div className="flex items-center justify-between">
+//     <div className="space-y-6 p-6">
+//       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 //         <div>
-//           <h2 className="text-2xl font-semibold text-gray-800">IT Dashboard</h2>
-//           <p className="text-sm text-gray-500">
-//             Monitoring · Devices · Alerts · Analytics
+//           <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+//             Admin Control Center
+//           </Badge>
+//           <h1 className="mt-2 text-3xl font-bold">
+//             Platform Administration Dashboard
+//           </h1>
+//           <p className="text-muted-foreground">
+//             Monitor system health analytics, manage users, and moderate
+//             community posts.
 //           </p>
 //         </div>
-
-//         <div className="flex items-center gap-3">
-//           <label className="flex items-center gap-2 text-sm text-gray-600">
-//             <input
-//               type="checkbox"
-//               checked={autoRefresh}
-//               onChange={(e) => setAutoRefresh(e.target.checked)}
-//               className="form-checkbox h-4 w-4"
-//             />
-//             Auto-refresh
-//           </label>
-
-//           <button
-//             onClick={handleRefresh}
-//             className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-//             title="Refresh now"
-//           >
-//             <MdRefresh /> Refresh
-//           </button>
-//         </div>
+//         <Button onClick={fetchDashboard} className="gap-2">
+//           <RefreshCcw className="h-4 w-4" /> Refresh
+//         </Button>
 //       </div>
 
-//       {/* metrics */}
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-//         <MetricCard
-//           title="Active Devices"
-//           value={overview?.activeDevices ?? 0}
-//           icon={<MdDeviceHub />}
-//         />
-//         <MetricCard
-//           title="Active Alerts"
-//           value={alerts.length}
-//           icon={<MdOutlineWarningAmber />}
-//         />
-//         <MetricCard
-//           title="System Uptime"
-//           value={overview?.uptime ?? "unknown"}
-//           icon={<MdAnalytics />}
-//         />
-//         <MetricCard
-//           title="Data Rate"
-//           value={overview?.dataRate ?? "—"}
-//           icon={<span>📶</span>}
-//         />
+//       {error ? (
+//         <Card className="border-red-200 bg-red-50">
+//           <CardContent className="pt-6 text-sm text-red-700">
+//             {error}
+//           </CardContent>
+//         </Card>
+//       ) : null}
+
+//       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+//         {metrics.map((metric) => (
+//           <MetricCard key={metric.title} {...metric} />
+//         ))}
 //       </div>
 
-//       {/* charts */}
-//       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-//         <div className="col-span-2 bg-white rounded-lg p-4 shadow-sm border">
-//           <h3 className="text-sm font-medium text-gray-700 mb-3">
-//             Sensor trends (7d)
-//           </h3>
-//           <Line
-//             data={lineData}
-//             options={{
-//               responsive: true,
-//               plugins: { legend: { position: "top" } },
-//             }}
-//           />
-//         </div>
-
-//         <div className="bg-white rounded-lg p-4 shadow-sm border">
-//           <h3 className="text-sm font-medium text-gray-700 mb-3">
-//             Device status
-//           </h3>
-//           <Doughnut data={deviceDoughnut} />
-//           <div className="mt-3 text-xs text-gray-500">
-//             Active: {overview?.activeDevices ?? 0} · Inactive:{" "}
-//             {overview?.inactiveDevices ?? 0} · Errors:{" "}
-//             {overview?.errorDevices ?? 0}
-//           </div>
-//         </div>
+//       <div ref={usersSectionRef}>
+//         <Card>
+//           <CardHeader>
+//             <CardTitle>User Account Management</CardTitle>
+//             <CardDescription>
+//               Activate, deactivate, and monitor platform users.
+//             </CardDescription>
+//           </CardHeader>
+//           <CardContent className="overflow-x-auto">
+//             <table className="w-full min-w-[760px] text-sm">
+//               <thead>
+//                 <tr className="border-b text-left text-muted-foreground">
+//                   <th className="py-3 pr-4">Name</th>
+//                   <th className="py-3 pr-4">Role</th>
+//                   <th className="py-3 pr-4">Email</th>
+//                   <th className="py-3 pr-4">Status</th>
+//                   <th className="py-3 pr-4">Actions</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {users.slice(0, 15).map((user) => (
+//                   <tr key={user._id} className="border-b">
+//                     <td className="py-3 pr-4 font-medium">{user.name}</td>
+//                     <td className="py-3 pr-4 capitalize">{user.role}</td>
+//                     <td className="py-3 pr-4">{user.email}</td>
+//                     <td className="py-3 pr-4">
+//                       <Badge variant={user.isActive ? "default" : "secondary"}>
+//                         {user.isActive ? "Active" : "Deactivated"}
+//                       </Badge>
+//                     </td>
+//                     <td className="py-3 pr-4">
+//                       {user.isActive ? (
+//                         <Button
+//                           size="sm"
+//                           variant="outline"
+//                           className="gap-1"
+//                           onClick={() => handleToggleUser(user._id, false)}
+//                         >
+//                           <UserX className="h-4 w-4" /> Deactivate
+//                         </Button>
+//                       ) : (
+//                         <Button
+//                           size="sm"
+//                           className="gap-1"
+//                           onClick={() => handleToggleUser(user._id, true)}
+//                         >
+//                           <UserCheck className="h-4 w-4" /> Activate
+//                         </Button>
+//                       )}
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </CardContent>
+//         </Card>
 //       </div>
 
-//       {/* alerts */}
-//       <div className="bg-white rounded-lg p-4 shadow-sm border">
-//         <div className="flex items-center justify-between mb-3">
-//           <h3 className="text-sm font-medium text-gray-700">
-//             Security & system alerts
-//           </h3>
-//         </div>
-//         <AlertsTable items={alerts} />
+//       <div ref={postsSectionRef}>
+//         <Card>
+//           <CardHeader>
+//             <CardTitle>Post Moderation</CardTitle>
+//             <CardDescription>
+//               Pin key posts or remove harmful content from forums.
+//             </CardDescription>
+//           </CardHeader>
+//           <CardContent className="overflow-x-auto">
+//             <table className="w-full min-w-[760px] text-sm">
+//               <thead>
+//                 <tr className="border-b text-left text-muted-foreground">
+//                   <th className="py-3 pr-4">Title</th>
+//                   <th className="py-3 pr-4">Category</th>
+//                   <th className="py-3 pr-4">Author</th>
+//                   <th className="py-3 pr-4">Reports</th>
+//                   <th className="py-3 pr-4">Actions</th>
+//                 </tr>
+//               </thead>
+//               <tbody>
+//                 {posts.slice(0, 15).map((post) => (
+//                   <tr key={post._id} className="border-b">
+//                     <td className="py-3 pr-4 font-medium">{post.title}</td>
+//                     <td className="py-3 pr-4 capitalize">{post.category}</td>
+//                     <td className="py-3 pr-4">
+//                       {post.author?.name || "Unknown"}
+//                     </td>
+//                     <td className="py-3 pr-4">
+//                       <Badge
+//                         variant={
+//                           post.openReports > 0 ? "destructive" : "secondary"
+//                         }
+//                       >
+//                         {post.openReports} open
+//                       </Badge>
+//                     </td>
+//                     <td className="py-3 pr-4">
+//                       <div className="flex gap-2">
+//                         <Button
+//                           size="sm"
+//                           variant="outline"
+//                           className="gap-1"
+//                           onClick={() => handlePinPost(post._id, !post.pinned)}
+//                         >
+//                           <Pin className="h-4 w-4" />{" "}
+//                           {post.pinned ? "Unpin" : "Pin"}
+//                         </Button>
+//                         <Button
+//                           size="sm"
+//                           variant="destructive"
+//                           className="gap-1"
+//                           onClick={() => handleDeletePost(post._id)}
+//                         >
+//                           <Trash2 className="h-4 w-4" /> Delete
+//                         </Button>
+//                       </div>
+//                     </td>
+//                   </tr>
+//                 ))}
+//               </tbody>
+//             </table>
+//           </CardContent>
+//         </Card>
 //       </div>
 //     </div>
 //   );
 // }
 
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -392,78 +347,458 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { BarChart3, ShieldCheck, Store, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import api from "@/services/api";
+import {
+  Activity,
+  BarChart3,
+  Box,
+  PackageCheck,
+  Pin,
+  RefreshCcw,
+  Shield,
+  Trash2,
+  UserCheck,
+  UserX,
+  Users,
+} from "lucide-react";
+import { useLocation } from "react-router-dom";
 
-const adminModules = [
-  {
-    title: "User Management",
-    description: "Manage account access, roles, and platform permissions.",
-    href: "/profile",
-    icon: Users,
-  },
-  {
-    title: "Marketplace Control",
-    description: "Oversee listings, moderation, and marketplace activity.",
-    href: "/marketplace",
-    icon: Store,
-  },
-  {
-    title: "System Analytics",
-    description: "Track high-level platform metrics and performance signals.",
-    href: "/dashboard",
-    icon: BarChart3,
-  },
-];
+function MetricCard({ title, value, helper, icon: Icon }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold">{value}</p>
+            {helper ? (
+              <p className="text-xs text-muted-foreground mt-1">{helper}</p>
+            ) : null}
+          </div>
+          <Icon className="h-5 w-5 text-amber-600" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function ITDashboard() {
+  const [overview, setOverview] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [marketplaceProducts, setMarketplaceProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const location = useLocation();
+  const usersSectionRef = useRef(null);
+  const postsSectionRef = useRef(null);
+  const marketplaceSectionRef = useRef(null);
+
+  const fetchDashboard = useCallback(async () => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const [overviewRes, usersRes, postsRes, marketplaceRes] = await Promise.all([
+        api.get("/api/admin/overview"),
+        api.get("/api/admin/users"),
+        api.get("/api/admin/posts"),
+        api.get("/api/admin/marketplace/products"),
+      ]);
+
+      setOverview(overviewRes.data);
+      setUsers(usersRes.data || []);
+      setPosts(postsRes.data || []);
+      setMarketplaceProducts(marketplaceRes.data || []);
+    } catch (err) {
+      setError(
+        err.response?.data?.error || "Failed to load admin dashboard data.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const view = params.get("view");
+
+    if (view === "users") {
+      usersSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
+    if (view === "posts") {
+      postsSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
+    if (view === "marketplace") {
+      marketplaceSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [location.search]);
+
+  const handleToggleUser = async (userId, nextStatus) => {
+    try {
+      await api.patch(`/api/admin/users/${userId}/status`, {
+        isActive: nextStatus,
+      });
+      setUsers((prev) =>
+        prev.map((user) =>
+          user._id === userId
+            ? {
+                ...user,
+                isActive: nextStatus,
+                deactivatedAt: nextStatus ? null : new Date().toISOString(),
+              }
+            : user,
+        ),
+      );
+    } catch (err) {
+      setError(err.response?.data?.error || "Unable to update user status.");
+    }
+  };
+
+  const handlePinPost = async (postId, pinned) => {
+    try {
+      await api.patch(`/api/admin/posts/${postId}/pin`, { pinned });
+      setPosts((prev) =>
+        prev.map((post) => (post._id === postId ? { ...post, pinned } : post)),
+      );
+    } catch (err) {
+      setError(err.response?.data?.error || "Unable to update post status.");
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      await api.delete(`/api/admin/posts/${postId}`);
+      setPosts((prev) => prev.filter((post) => post._id !== postId));
+    } catch (err) {
+      setError(err.response?.data?.error || "Unable to delete post.");
+    }
+  };
+
+  const handleToggleMarketplaceStock = async (productId, isOutOfStock) => {
+    try {
+      const { data } = await api.patch(
+        `/api/admin/marketplace/products/${productId}/stock`,
+        {
+          isOutOfStock,
+        },
+      );
+      setMarketplaceProducts((prev) =>
+        prev.map((product) =>
+          product._id === productId
+            ? { ...product, isOutOfStock: data.isOutOfStock }
+            : product,
+        ),
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.error || "Unable to update marketplace listing.",
+      );
+    }
+  };
+
+  const handleDeleteMarketplaceProduct = async (productId) => {
+    try {
+      await api.delete(`/api/admin/marketplace/products/${productId}`);
+      setMarketplaceProducts((prev) =>
+        prev.filter((product) => product._id !== productId),
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.error || "Unable to delete marketplace listing.",
+      );
+    }
+  };
+
+  const metrics = useMemo(() => {
+    const totals = overview?.totals || {};
+    const activeMarketplaceListings = marketplaceProducts.filter(
+      (item) => !item.isOutOfStock,
+    ).length;
+
+    return [
+      {
+        title: "Total Users",
+        value: totals.users ?? 0,
+        helper: `${totals.activeUsers ?? 0} active accounts`,
+        icon: Users,
+      },
+      {
+        title: "System Health",
+        value: `${totals.onlineUsers ?? 0} online`,
+        helper: `${totals.deactivatedUsers ?? 0} deactivated accounts`,
+        icon: Activity,
+      },
+      {
+        title: "Forum Posts",
+        value: totals.posts ?? 0,
+        helper: `${totals.pinnedPosts ?? 0} pinned`,
+        icon: BarChart3,
+      },
+      {
+        title: "Marketplace Listings",
+        value: marketplaceProducts.length,
+        helper: `${activeMarketplaceListings} active listings`,
+        icon: PackageCheck,
+      },
+      {
+        title: "Moderation Alerts",
+        value: totals.openReports ?? 0,
+        helper: "Open reports requiring admin review",
+        icon: Shield,
+      },
+    ];
+  }, [overview, marketplaceProducts]);
+
+  if (loading) {
+    return (
+      <div className="p-6 text-sm text-muted-foreground">
+        Loading admin dashboard...
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
-      <div className="space-y-2">
-        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-          SmartFarm Platform
-        </Badge>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Keep the SmartFarm platform secure, reliable, and well-governed.
-        </p>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+            Admin Control Center
+          </Badge>
+          <h1 className="mt-2 text-3xl font-bold">
+            Platform Administration Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Monitor system analytics, manage users, moderate posts, and control
+            marketplace listings.
+          </p>
+        </div>
+        <Button onClick={fetchDashboard} className="gap-2">
+          <RefreshCcw className="h-4 w-4" /> Refresh
+        </Button>
       </div>
 
-      <Card className="border-amber-200 bg-amber-50/60">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-amber-900">
-            <ShieldCheck className="h-5 w-5" />
-            Platform Oversight
-          </CardTitle>
-          <CardDescription className="text-amber-800">
-            Centralized controls for users, marketplace operations, and
-            analytics.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      {error ? (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6 text-sm text-red-700">
+            {error}
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {adminModules.map((module) => {
-          const Icon = module.icon;
-          return (
-            <Card key={module.title}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Icon className="h-5 w-5 text-amber-600" />
-                  {module.title}
-                </CardTitle>
-                <CardDescription>{module.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link to={module.href}>Open {module.title}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {metrics.map((metric) => (
+          <MetricCard key={metric.title} {...metric} />
+        ))}
+      </div>
+
+      <div ref={usersSectionRef}>
+        <Card>
+          <CardHeader>
+            <CardTitle>User Account Management</CardTitle>
+            <CardDescription>
+              Activate, deactivate, and monitor platform users.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-3 pr-4">Name</th>
+                  <th className="py-3 pr-4">Role</th>
+                  <th className="py-3 pr-4">Email</th>
+                  <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 pr-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.slice(0, 15).map((user) => (
+                  <tr key={user._id} className="border-b">
+                    <td className="py-3 pr-4 font-medium">{user.name}</td>
+                    <td className="py-3 pr-4 capitalize">{user.role}</td>
+                    <td className="py-3 pr-4">{user.email}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={user.isActive ? "default" : "secondary"}>
+                        {user.isActive ? "Active" : "Deactivated"}
+                      </Badge>
+                    </td>
+                    <td className="py-3 pr-4">
+                      {user.isActive ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                          onClick={() => handleToggleUser(user._id, false)}
+                        >
+                          <UserX className="h-4 w-4" /> Deactivate
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="gap-1"
+                          onClick={() => handleToggleUser(user._id, true)}
+                        >
+                          <UserCheck className="h-4 w-4" /> Activate
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div ref={postsSectionRef}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Post Moderation</CardTitle>
+            <CardDescription>
+              Pin key posts or remove harmful content from forums.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-3 pr-4">Title</th>
+                  <th className="py-3 pr-4">Category</th>
+                  <th className="py-3 pr-4">Author</th>
+                  <th className="py-3 pr-4">Reports</th>
+                  <th className="py-3 pr-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {posts.slice(0, 15).map((post) => (
+                  <tr key={post._id} className="border-b">
+                    <td className="py-3 pr-4 font-medium">{post.title}</td>
+                    <td className="py-3 pr-4 capitalize">{post.category}</td>
+                    <td className="py-3 pr-4">
+                      {post.author?.name || "Unknown"}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge
+                        variant={
+                          post.openReports > 0 ? "destructive" : "secondary"
+                        }
+                      >
+                        {post.openReports} open
+                      </Badge>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                          onClick={() => handlePinPost(post._id, !post.pinned)}
+                        >
+                          <Pin className="h-4 w-4" />{" "}
+                          {post.pinned ? "Unpin" : "Pin"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="gap-1"
+                          onClick={() => handleDeletePost(post._id)}
+                        >
+                          <Trash2 className="h-4 w-4" /> Delete
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div ref={marketplaceSectionRef}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Marketplace Control Panel</CardTitle>
+            <CardDescription>
+              Manage active listings, mark items in/out of stock, or remove
+              policy-violating products.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="py-3 pr-4">Product</th>
+                  <th className="py-3 pr-4">Seller</th>
+                  <th className="py-3 pr-4">Category</th>
+                  <th className="py-3 pr-4">Stock</th>
+                  <th className="py-3 pr-4">Status</th>
+                  <th className="py-3 pr-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {marketplaceProducts.slice(0, 20).map((product) => (
+                  <tr key={product._id} className="border-b">
+                    <td className="py-3 pr-4 font-medium">{product.name}</td>
+                    <td className="py-3 pr-4">{product.seller?.name || "Unknown"}</td>
+                    <td className="py-3 pr-4 capitalize">
+                      {String(product.category || "other").replaceAll("_", " ")}
+                    </td>
+                    <td className="py-3 pr-4">
+                      {product.stockQuantity} {product.unit}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={product.isOutOfStock ? "secondary" : "default"}>
+                        {product.isOutOfStock ? "Out of stock" : "Active"}
+                      </Badge>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1"
+                          onClick={() =>
+                            handleToggleMarketplaceStock(
+                              product._id,
+                              !product.isOutOfStock,
+                            )
+                          }
+                        >
+                          <Box className="h-4 w-4" />
+                          {product.isOutOfStock ? "Set Active" : "Set Out"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="gap-1"
+                          onClick={() => handleDeleteMarketplaceProduct(product._id)}
+                        >
+                          <Trash2 className="h-4 w-4" /> Remove
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
